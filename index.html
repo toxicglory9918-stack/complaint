@@ -184,18 +184,11 @@
             Authenticating & Initializing...
         </div>
         
-        <!-- Local Mode Warning -->
-        <div id="local-mode-warning" class="hidden p-4 bg-yellow-900 border-l-4 border-yellow-500 text-yellow-100 mb-6 max-w-2xl mx-auto rounded-lg" role="alert">
-            <p class="font-bold">⚠️ Local Sandbox Mode Active</p>
-            <p class="text-sm">Database features (saving/loading reports) are **disabled**. The UI is functional for testing purposes only.</p>
-        </div>
-
         <!-- --- Screen 1: Name Entry --- -->
         <div id="name-entry-screen" class="hidden max-w-md mx-auto screen-container">
             <div class="mc-card p-6 text-center rounded-lg">
                 <h2 class="text-3xl font-bold mb-4" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">ACCESS TERMINAL</h2>
                 <p class="text-gray-400 mb-6">Enter your Minecraft name to access player functions.</p>
-                <p class="text-xs text-gray-500 mb-4">Admin Code: <span class="text-purple-400 font-bold">9935</span> | Police Code: <span class="text-blue-400 font-bold">8090</span></p>
 
                 <form id="name-entry-form" class="space-y-4">
                     <div>
@@ -313,31 +306,28 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, where, limit, setLogLevel, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Global variables are provided by the hosting environment
-        const DUMMY_FIREBASE_CONFIG = {
-            apiKey: "dummy-key-for-local-testing",
-            authDomain: "dummy-auth-domain",
-            projectId: "dummy-project-id",
-            storageBucket: "dummy-bucket",
-            messagingSenderId: "dummy-sender-id",
-            appId: "dummy-app-id"
-        };
-        
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id-local';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DUMMY_FIREBASE_CONFIG;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
-        // --- New flag to check if we are running without a live database ---
-        const isLocalMode = firebaseConfig.apiKey === DUMMY_FIREBASE_CONFIG.apiKey;
+        let firebaseConfig = null;
+        let initialAuthToken = null;
+
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        } catch (e) {
+            console.error("Could not parse Firebase configuration.", e);
+        }
 
         // --- Role Codes ---
+        // Note: These are no longer advertised in the UI, but still used for access control logic.
         const ADMIN_CODE = '9935'; 
         const POLICE_CODE = '8090'; 
         const PRIMARY_COLOR = '#FFA500'; 
 
         // --- Global State & Firebase Init ---
         setLogLevel('Debug');
-        let db;
-        let auth;
+        let db = null; // Initialize as null
+        let auth = null;
         let userId = null;
         let playerName = null;
         let isAdmin = false;
@@ -348,7 +338,6 @@
         const cubesScreen = document.getElementById('cubes-screen'); 
         const formDetailsScreen = document.getElementById('form-details-screen'); 
         const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
-        const localModeWarning = document.getElementById('local-mode-warning');
         
         const nameEntryForm = document.getElementById('name-entry-form');
         const form = document.getElementById('complaint-form');
@@ -360,7 +349,7 @@
         const userListContainer = document.getElementById('user-complaints-list');
         const adminListContainer = document.getElementById('admin-complaints-list');
         const reporterNameDisplayUser = document.getElementById('reporter-name-display-user');
-        const reporterNameDisplayAdmin = document.getElementById('reporter-name-display-admin');
+        
         const accessLevelInfo = document.getElementById('access-level-info');
 
         const allScreens = [nameEntryScreen, cubesScreen, formDetailsScreen, adminDashboardScreen];
@@ -376,13 +365,6 @@
 
         // --- Dynamic & Animated Screen Transition Function ---
         function showScreen(targetElement) {
-            // Show warning if in local mode
-            if (isLocalMode) {
-                localModeWarning.classList.remove('hidden');
-            } else {
-                localModeWarning.classList.add('hidden');
-            }
-            
             let activeElement = null;
 
             allScreens.forEach(el => {
@@ -435,6 +417,7 @@
                 return;
             }
 
+            // Check for admin/police access via username/code
             isAdmin = (playerName === ADMIN_CODE);
             isPolice = (playerName === POLICE_CODE); 
             
@@ -443,7 +426,7 @@
             // Set Admin/Police Info Box
             if (isAdmin) {
                 accessLevelInfo.innerHTML = `
-                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">ADMIN (9935)</span></p>
+                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">ADMIN (FULL)</span></p>
                     <p class="text-xs text-gray-500 mt-1">Full control over report statuses.</p>
                 `;
                 adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-admin)';
@@ -451,7 +434,7 @@
                 showScreen(adminDashboardScreen);
             } else if (isPolice) {
                  accessLevelInfo.innerHTML = `
-                    <p class="font-bold" style="color: var(--mc-police);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">POLICE (8090)</span></p>
+                    <p class="font-bold" style="color: var(--mc-police);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">POLICE (VIEWER)</span></p>
                     <p class="text-xs text-gray-500 mt-1">View all reports. Can change status to Acknowledged, Resolved, or Rejected.</p>
                 `;
                 adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-police)';
@@ -462,12 +445,17 @@
                 renderCubes();
             }
             
-            // Setup listener only if not in local mode
-            setupRealtimeListener();
+            // Setup listener only if the database is initialized
+            if (db) {
+                setupRealtimeListener();
+            } else {
+                userListContainer.innerHTML = '<li class="text-red-500 italic p-3">Database connection failed. Report history unavailable.</li>';
+                adminListContainer.innerHTML = '<li class="text-red-500 italic p-3">Database connection failed. Reports unavailable.</li>';
+            }
         });
 
 
-        // --- UI Functions (showModal, renderCubes, handleCubeSelection remain the same) ---
+        // --- UI Functions ---
 
         function renderCubes() {
             const container = document.getElementById('complaint-cubes');
@@ -522,17 +510,18 @@
         // --- Firebase Functions ---
 
         async function initFirebase() {
+            // Check if essential configuration is available
+            if (!firebaseConfig || !firebaseConfig.projectId) {
+                console.error("FIREBASE CONFIGURATION MISSING. Running in UI-only mode (data will not be saved).");
+                // Fallback: Show the login screen immediately but set a dummy user ID for UI flow
+                userId = 'no-db-user-' + Math.random().toString(36).substring(2, 9); 
+                loadingSpinner.classList.add('hidden');
+                showScreen(nameEntryScreen);
+                return;
+            }
+
+            // Proceed with live Firebase initialization
             try {
-                // --- LOCAL SANDBOX MODE CHECK (The fix for the user's error) ---
-                if (isLocalMode) {
-                    console.warn("Running in Local Sandbox Mode: Firestore database functionality is disabled. Logins and UI work, but data is NOT persistent.");
-                    userId = 'local-user-' + Math.random().toString(36).substring(2, 9); // Generate a unique local ID
-                    loadingSpinner.classList.add('hidden');
-                    showScreen(nameEntryScreen);
-                    return; // Skip the rest of Firebase initialization
-                }
-                // --- END LOCAL SANDBOX MODE CHECK ---
-                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -556,19 +545,19 @@
 
             } catch (error) {
                 console.error("Error initializing Firebase or signing in:", error);
-                // Use a clearer error message for the user when this happens
-                loadingSpinner.textContent = 'FATAL ERROR: Could not load application. (Check console for network/config details).';
+                loadingSpinner.textContent = 'FATAL ERROR: Could not load application database. (Check console for details).';
             }
         }
 
         function getComplaintsCollection() {
+            if (!db) return null;
             return collection(db, `artifacts/${appId}/public/data/complaints`);
         }
 
         // --- Firestore Status Update Functions (Admin/Police Only) ---
         async function updateComplaintStatus(docId, newStatus) {
-            if (isLocalMode) {
-                 showModal('LOCAL MODE WARNING', `Status change to ${newStatus} simulated but not saved to database.`, 'bg-blue-500');
+            if (!db) {
+                 showModal('DB OFFLINE', `Status change to ${newStatus} simulated but not saved.`, 'bg-blue-500');
                  return;
             }
             if (!isAdmin && !isPolice) {
@@ -593,19 +582,10 @@
 
 
         function setupRealtimeListener() {
-            if (isLocalMode) {
-                userListContainer.innerHTML = '<li class="text-gray-500 italic p-3">HISTORY DISABLED: Running in Local Mode.</li>';
-                adminListContainer.innerHTML = '<li class="text-gray-500 italic p-3">REPORTS DISABLED: Running in Local Mode.</li>';
-                return;
-            }
-
-            if (!userId) {
-                console.error("Cannot set up listener: User ID is missing.");
-                return;
-            }
+            const complaintCollection = getComplaintsCollection();
+            if (!complaintCollection) return; // DB is not initialized
 
             let q;
-            const complaintCollection = getComplaintsCollection();
             const targetListContainer = (isAdmin || isPolice) ? adminListContainer : userListContainer;
 
             if (isAdmin || isPolice) {
@@ -636,12 +616,12 @@
                 }
 
                 reports.forEach((complaint, index) => {
-                    // --- Status Coloring (Updated to include Rejected) ---
+                    // --- Status Coloring ---
                     let statusColor = 'text-blue-400';
                     let statusBg = 'bg-blue-900';
-                    if (complaint.status === 'Under Review') { statusColor = 'text-yellow-400'; statusBg = 'bg-yellow-900'; } // Seen
-                    else if (complaint.status === 'Resolved') { statusColor = 'text-green-400'; statusBg = 'bg-green-900'; } // Solved
-                    else if (complaint.status === 'Rejected') { statusColor = 'text-red-400'; statusBg = 'bg-red-900'; } // Rejected
+                    if (complaint.status === 'Under Review') { statusColor = 'text-yellow-400'; statusBg = 'bg-yellow-900'; } 
+                    else if (complaint.status === 'Resolved') { statusColor = 'text-green-400'; statusBg = 'bg-green-900'; } 
+                    else if (complaint.status === 'Rejected') { statusColor = 'text-red-400'; statusBg = 'bg-red-900'; } 
 
                     let adminActions = '';
                     if (isAdmin || isPolice) {
@@ -659,12 +639,10 @@
                             // Mark Resolved
                             actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-600 hover:bg-green-500 text-black border-green-800">MARK RESOLVED</button>`);
                             
-                            // Rejected / False (New Button)
+                            // Rejected / False
                             actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Rejected')" class="admin-action-btn bg-red-600 hover:bg-red-500 text-black border-red-800">REJECTED / FALSE</button>`);
                         }
                         
-                        // Police and Admin use the same button set now, simplifying the logic above.
-
                         adminActions = `<div class="mt-3 space-x-2 flex flex-wrap gap-2">${actionsHtml.join('')}</div>`;
                     }
                     
@@ -743,7 +721,7 @@
                 details: details,
                 evidence: evidencePayload, 
                 status: 'Pending Review',
-                timestamp: serverTimestamp()
+                timestamp: db ? serverTimestamp() : new Date().toISOString() // Use timestamp if DB is active
             };
 
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -751,8 +729,8 @@
             submitBtn.disabled = true;
 
             try {
-                if (isLocalMode) {
-                     showModal('LOCAL MODE ACTIVE', 'Form submission succeeded locally, but data will NOT be saved to Firestore.', 'bg-blue-500');
+                if (!db) {
+                     showModal('UI-ONLY MODE', 'Form submission succeeded locally, but data was NOT saved.', 'bg-blue-500');
                 } else {
                      await addDoc(getComplaintsCollection(), complaintData);
                      showModal('TRANSMISSION SUCCESS', `Report for ${targetName} logged successfully. Standby for review.`, 'bg-mc-primary');
