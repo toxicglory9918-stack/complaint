@@ -16,9 +16,9 @@
             --mc-bg: #1A1A1A; /* Obsidian Black */
             --mc-card-bg: #2d2d2d; /* Dark Stone */
             --mc-text: #F0F0F0; /* Light Text */
-            --mc-admin: #6A0DAD; /* Wither Purple */
+            --mc-admin: #6A0DAD; /* Wither Purple (Admin) */
+            --mc-police: #3498DB; /* Diamond Blue (Police) */
             --mc-admin-light: #9B59B6;
-            --mc-accent-blue: #3498DB;
             --mc-accent-red: #E74C3C;
             --mc-accent-yellow: #F1C40F;
         }
@@ -121,7 +121,7 @@
         
         /* Specific Cube Colors (Retaining high contrast) */
         .cube-griefing { background-color: var(--mc-accent-red); color: white; }
-        .cube-hacking { background-color: var(--mc-accent-blue); color: white; }
+        .cube-hacking { background-color: var(--mc-police); color: white; }
         .cube-harassment { background-color: var(--mc-accent-yellow); color: #1A1A1A; } 
         .cube-staff-abuse { background-color: #800080; color: white; } /* Purple Nether Accent */
         .cube-bug { background-color: #555; color: var(--mc-text); } /* Dark Gray */
@@ -144,6 +144,7 @@
             color: var(--mc-text);
             border: 2px solid var(--mc-secondary);
             box-shadow: 2px 2px 0 var(--mc-secondary);
+            font-size: 0.75rem; /* Small font for buttons */
         }
         .admin-action-btn:hover {
             background-color: #444;
@@ -172,9 +173,7 @@
 
     <!-- Header Section -->
     <header class="mc-header p-6 text-center">
-        <!-- MODIFIED H1 TITLE -->
         <h1 class="text-4xl md:text-5xl font-black uppercase tracking-wider text-black">MINECRAFT_2613</h1>
-        <!-- Removed: System Status: Awaiting User Input -->
     </header>
 
     <main class="container mx-auto p-4 md:p-8">
@@ -184,12 +183,19 @@
             <div class="animate-spin inline-block w-8 h-8 border-4 border-mc-primary border-t-transparent rounded-full mr-2"></div>
             Authenticating & Initializing...
         </div>
+        
+        <!-- Local Mode Warning -->
+        <div id="local-mode-warning" class="hidden p-4 bg-yellow-900 border-l-4 border-yellow-500 text-yellow-100 mb-6 max-w-2xl mx-auto rounded-lg" role="alert">
+            <p class="font-bold">⚠️ Local Sandbox Mode Active</p>
+            <p class="text-sm">Database features (saving/loading reports) are **disabled**. The UI is functional for testing purposes only.</p>
+        </div>
 
         <!-- --- Screen 1: Name Entry --- -->
         <div id="name-entry-screen" class="hidden max-w-md mx-auto screen-container">
             <div class="mc-card p-6 text-center rounded-lg">
                 <h2 class="text-3xl font-bold mb-4" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">ACCESS TERMINAL</h2>
                 <p class="text-gray-400 mb-6">Enter your Minecraft name to access player functions.</p>
+                <p class="text-xs text-gray-500 mb-4">Admin Code: <span class="text-purple-400 font-bold">9935</span> | Police Code: <span class="text-blue-400 font-bold">8090</span></p>
 
                 <form id="name-entry-form" class="space-y-4">
                     <div>
@@ -276,13 +282,12 @@
             </div>
         </div>
         
-        <!-- --- Screen 4: Admin Dashboard (ADMIN VIEW) --- -->
+        <!-- --- Screen 4: Admin Dashboard (ADMIN/POLICE VIEW) --- -->
         <div id="admin-dashboard-screen" class="hidden max-w-6xl mx-auto screen-container">
             <div class="mc-card p-6 bg-gray-900 border-4" style="border-color: var(--mc-admin);">
                 <h2 class="text-3xl font-black mb-4 uppercase border-b-4 pb-2" style="color: var(--mc-admin); border-color: var(--mc-admin);">ADMIN CONTROL PANEL</h2>
-                <div class="p-3 mb-6 bg-gray-800 border-2 rounded-md text-sm" style="border-color: var(--mc-admin-light);">
-                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span id="reporter-name-display-admin" class="text-xl font-extrabold">ADMIN</span></p>
-                    <p class="text-xs text-gray-500 mt-1">Acknowledge (Seen) and Mark Resolved (Solved) actions are exclusive to this account.</p>
+                <div id="access-level-info" class="p-3 mb-6 bg-gray-800 border-2 rounded-md text-sm" style="border-color: var(--mc-admin-light);">
+                    <!-- Access level dynamically set by JS -->
                 </div>
                 
                 <ul id="admin-complaints-list" class="space-y-4">
@@ -308,9 +313,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, where, limit, setLogLevel, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Global variables are provided by the hosting environment
-        // NOTE: When running locally (like from GitHub), we must provide a dummy configuration
-        // for Firebase to initialize without error. Data persistence will only work in the Canvas environment.
-
         const DUMMY_FIREBASE_CONFIG = {
             apiKey: "dummy-key-for-local-testing",
             authDomain: "dummy-auth-domain",
@@ -323,9 +325,14 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id-local';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DUMMY_FIREBASE_CONFIG;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- New flag to check if we are running without a live database ---
+        const isLocalMode = firebaseConfig.apiKey === DUMMY_FIREBASE_CONFIG.apiKey;
 
+        // --- Role Codes ---
         const ADMIN_CODE = '9935'; 
-        const PRIMARY_COLOR = '#FFA500'; // Used for dynamic JS coloring
+        const POLICE_CODE = '8090'; 
+        const PRIMARY_COLOR = '#FFA500'; 
 
         // --- Global State & Firebase Init ---
         setLogLevel('Debug');
@@ -334,12 +341,14 @@
         let userId = null;
         let playerName = null;
         let isAdmin = false;
+        let isPolice = false; 
 
         // DOM elements
         const nameEntryScreen = document.getElementById('name-entry-screen'); 
         const cubesScreen = document.getElementById('cubes-screen'); 
         const formDetailsScreen = document.getElementById('form-details-screen'); 
         const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
+        const localModeWarning = document.getElementById('local-mode-warning');
         
         const nameEntryForm = document.getElementById('name-entry-form');
         const form = document.getElementById('complaint-form');
@@ -352,7 +361,8 @@
         const adminListContainer = document.getElementById('admin-complaints-list');
         const reporterNameDisplayUser = document.getElementById('reporter-name-display-user');
         const reporterNameDisplayAdmin = document.getElementById('reporter-name-display-admin');
-        
+        const accessLevelInfo = document.getElementById('access-level-info');
+
         const allScreens = [nameEntryScreen, cubesScreen, formDetailsScreen, adminDashboardScreen];
 
         const complaintCategories = [
@@ -366,6 +376,13 @@
 
         // --- Dynamic & Animated Screen Transition Function ---
         function showScreen(targetElement) {
+            // Show warning if in local mode
+            if (isLocalMode) {
+                localModeWarning.classList.remove('hidden');
+            } else {
+                localModeWarning.classList.add('hidden');
+            }
+            
             let activeElement = null;
 
             allScreens.forEach(el => {
@@ -406,7 +423,7 @@
         }
 
 
-        // --- Screen 1 Logic (Name Entry & Admin Check) ---
+        // --- Screen 1 Logic (Name Entry & Role Check) ---
         nameEntryForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -419,21 +436,38 @@
             }
 
             isAdmin = (playerName === ADMIN_CODE);
-            reporterNameDisplayUser.textContent = playerName;
-            reporterNameDisplayAdmin.textContent = isAdmin ? 'ADMIN (9935)' : playerName;
+            isPolice = (playerName === POLICE_CODE); 
             
+            reporterNameDisplayUser.textContent = playerName;
+
+            // Set Admin/Police Info Box
             if (isAdmin) {
+                accessLevelInfo.innerHTML = `
+                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">ADMIN (9935)</span></p>
+                    <p class="text-xs text-gray-500 mt-1">Full control over report statuses.</p>
+                `;
+                adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-admin)';
+                adminDashboardScreen.querySelector('h2').style.color = 'var(--mc-admin)';
                 showScreen(adminDashboardScreen);
+            } else if (isPolice) {
+                 accessLevelInfo.innerHTML = `
+                    <p class="font-bold" style="color: var(--mc-police);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">POLICE (8090)</span></p>
+                    <p class="text-xs text-gray-500 mt-1">View all reports. Can change status to Acknowledged, Resolved, or Rejected.</p>
+                `;
+                adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-police)';
+                adminDashboardScreen.querySelector('h2').style.color = 'var(--mc-police)';
+                showScreen(adminDashboardScreen); 
             } else {
                 showScreen(cubesScreen); 
                 renderCubes();
             }
             
+            // Setup listener only if not in local mode
             setupRealtimeListener();
         });
 
 
-        // --- UI Functions ---
+        // --- UI Functions (showModal, renderCubes, handleCubeSelection remain the same) ---
 
         function renderCubes() {
             const container = document.getElementById('complaint-cubes');
@@ -466,7 +500,6 @@
 
         function showModal(title, message, colorClass) {
             const modalContent = document.getElementById('modal-content');
-            const titleColor = colorClass.includes('red') ? 'text-red-500' : `text-[${PRIMARY_COLOR}]`;
             
             modalContent.innerHTML = `
                 <h3 class="text-3xl font-bold mb-4" style="color: ${colorClass.includes('red') ? '#EF4444' : PRIMARY_COLOR}; font-family: 'Bebas Neue', sans-serif;">${title}</h3>
@@ -490,6 +523,16 @@
 
         async function initFirebase() {
             try {
+                // --- LOCAL SANDBOX MODE CHECK (The fix for the user's error) ---
+                if (isLocalMode) {
+                    console.warn("Running in Local Sandbox Mode: Firestore database functionality is disabled. Logins and UI work, but data is NOT persistent.");
+                    userId = 'local-user-' + Math.random().toString(36).substring(2, 9); // Generate a unique local ID
+                    loadingSpinner.classList.add('hidden');
+                    showScreen(nameEntryScreen);
+                    return; // Skip the rest of Firebase initialization
+                }
+                // --- END LOCAL SANDBOX MODE CHECK ---
+                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -497,7 +540,6 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                    // Fallback to anonymous sign-in, which works with the dummy config
                     await signInAnonymously(auth);
                 }
                 
@@ -514,7 +556,8 @@
 
             } catch (error) {
                 console.error("Error initializing Firebase or signing in:", error);
-                loadingSpinner.textContent = 'Error loading application. Check console for details.';
+                // Use a clearer error message for the user when this happens
+                loadingSpinner.textContent = 'FATAL ERROR: Could not load application. (Check console for network/config details).';
             }
         }
 
@@ -522,10 +565,13 @@
             return collection(db, `artifacts/${appId}/public/data/complaints`);
         }
 
-        // --- Firestore Status Update Functions (Admin Only) ---
-
+        // --- Firestore Status Update Functions (Admin/Police Only) ---
         async function updateComplaintStatus(docId, newStatus) {
-            if (!isAdmin) {
+            if (isLocalMode) {
+                 showModal('LOCAL MODE WARNING', `Status change to ${newStatus} simulated but not saved to database.`, 'bg-blue-500');
+                 return;
+            }
+            if (!isAdmin && !isPolice) {
                 showModal('SECURITY BREACH', 'Unauthorized status update attempt.', 'bg-red-500');
                 return;
             }
@@ -547,6 +593,12 @@
 
 
         function setupRealtimeListener() {
+            if (isLocalMode) {
+                userListContainer.innerHTML = '<li class="text-gray-500 italic p-3">HISTORY DISABLED: Running in Local Mode.</li>';
+                adminListContainer.innerHTML = '<li class="text-gray-500 italic p-3">REPORTS DISABLED: Running in Local Mode.</li>';
+                return;
+            }
+
             if (!userId) {
                 console.error("Cannot set up listener: User ID is missing.");
                 return;
@@ -554,11 +606,13 @@
 
             let q;
             const complaintCollection = getComplaintsCollection();
-            const targetListContainer = isAdmin ? adminListContainer : userListContainer;
+            const targetListContainer = (isAdmin || isPolice) ? adminListContainer : userListContainer;
 
-            if (isAdmin) {
+            if (isAdmin || isPolice) {
+                // Admin and Police fetch all reports
                 q = query(complaintCollection, limit(20)); 
             } else {
+                // Regular users fetch only their reports
                 q = query(complaintCollection, where("complainantId", "==", userId), limit(10));
             }
 
@@ -574,40 +628,51 @@
                     return timeB - timeA;
                 });
 
-                // Clear container before adding new animated elements
                 targetListContainer.innerHTML = '';
                 if (reports.length === 0) {
-                    const message = isAdmin ? 'NO ACTIVE REPORTS IN DATABASE.' : 'NO REPORTS SUBMITTED.';
+                    const message = (isAdmin || isPolice) ? 'NO ACTIVE REPORTS IN DATABASE.' : 'NO REPORTS SUBMITTED.';
                     targetListContainer.innerHTML = `<li class="text-gray-500 italic p-3">${message}</li>`;
                     return;
                 }
 
                 reports.forEach((complaint, index) => {
+                    // --- Status Coloring (Updated to include Rejected) ---
                     let statusColor = 'text-blue-400';
                     let statusBg = 'bg-blue-900';
                     if (complaint.status === 'Under Review') { statusColor = 'text-yellow-400'; statusBg = 'bg-yellow-900'; } // Seen
                     else if (complaint.status === 'Resolved') { statusColor = 'text-green-400'; statusBg = 'bg-green-900'; } // Solved
+                    else if (complaint.status === 'Rejected') { statusColor = 'text-red-400'; statusBg = 'bg-red-900'; } // Rejected
 
                     let adminActions = '';
-                    if (isAdmin) {
-                        adminActions = `
-                            <div class="mt-2 space-x-2 flex flex-wrap gap-2">
-                                ${complaint.status !== 'Under Review' ? 
-                                    // Acknowledge (Seen)
-                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-600 hover:bg-yellow-500 text-black border-yellow-800">ACKNOWLEDGE (SEEN)</button>` 
-                                    : ''
-                                }
-                                ${complaint.status !== 'Resolved' ? 
-                                    // Mark Resolved (Solved)
-                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-600 hover:bg-green-500 text-black border-green-800">MARK RESOLVED (SOLVED)</button>`
-                                    : ''
-                                }
-                            </div>
-                        `;
+                    if (isAdmin || isPolice) {
+                        
+                        let actionsHtml = [];
+                        let isFinalized = complaint.status === 'Resolved' || complaint.status === 'Rejected';
+                        
+                        // Action 1: Acknowledge / Under Review
+                        if (complaint.status === 'Pending Review') {
+                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-600 hover:bg-yellow-500 text-black border-yellow-800">ACKNOWLEDGE (SEEN)</button>`); 
+                        }
+
+                        // Actions available only if not finalized
+                        if (!isFinalized) {
+                            // Mark Resolved
+                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-600 hover:bg-green-500 text-black border-green-800">MARK RESOLVED</button>`);
+                            
+                            // Rejected / False (New Button)
+                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Rejected')" class="admin-action-btn bg-red-600 hover:bg-red-500 text-black border-red-800">REJECTED / FALSE</button>`);
+                        }
+                        
+                        // Police and Admin use the same button set now, simplifying the logic above.
+
+                        adminActions = `<div class="mt-3 space-x-2 flex flex-wrap gap-2">${actionsHtml.join('')}</div>`;
                     }
                     
+                    let roleTag = isAdmin ? `<span style="color: var(--mc-admin);">ADMIN</span>` : (isPolice ? `<span style="color: var(--mc-police);">POLICE</span>` : `<span class="text-gray-500">USER</span>`);
+
+
                     let reportDetail;
-                    if (isAdmin) {
+                    if (isAdmin || isPolice) {
                         reportDetail = `
                             <div class="flex justify-between items-start w-full">
                                 <div>
@@ -616,7 +681,7 @@
                                 </div>
                                 <div class="text-right">
                                     <p class="text-xs font-bold" style="color: var(--mc-admin-light);">REPORTED BY:</p>
-                                    <p class="text-sm font-extrabold" style="color: var(--mc-admin);">${complaint.complainantName}</p>
+                                    <p class="text-sm font-extrabold">${complaint.complainantName} (${roleTag})</p>
                                 </div>
                             </div>
                             <p class="text-sm text-gray-400 mt-2">${complaint.details}</p>
@@ -686,10 +751,8 @@
             submitBtn.disabled = true;
 
             try {
-                // Since this might be running with a dummy config, we'll check if the db is initialized properly 
-                if (db.app.options.apiKey === DUMMY_FIREBASE_CONFIG.apiKey) {
-                     showModal('LOCAL MODE ACTIVE', 'Form submission succeeded locally, but data will NOT be saved to Firestore. (Use Canvas for persistence).', 'bg-blue-500');
-                     // Simulate success locally
+                if (isLocalMode) {
+                     showModal('LOCAL MODE ACTIVE', 'Form submission succeeded locally, but data will NOT be saved to Firestore.', 'bg-blue-500');
                 } else {
                      await addDoc(getComplaintsCollection(), complaintData);
                      showModal('TRANSMISSION SUCCESS', `Report for ${targetName} logged successfully. Standby for review.`, 'bg-mc-primary');
