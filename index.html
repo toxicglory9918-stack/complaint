@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcadia SMP - Player Complaint Form</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Minecraft-like styling */
+        :root {
+            --mc-green: #5aa65c;
+            --mc-dirt: #8b4513;
+            --mc-stone: #a9a9a9;
+            --mc-bg: #e6e6e6;
+            --mc-accent-blue: #5b7194; /* for command block/blue glass */
+            --mc-accent-red: #cc5252; /* for redstone block */
+            --mc-admin-red: #c53030;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--mc-bg);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23d4d4d4' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/path%3E%3C/svg%3E");
+        }
+        .mc-header {
+            background-color: var(--mc-green);
+            border-bottom: 6px solid #3d793e;
+            text-shadow: 2px 2px 0 #3d793e;
+        }
+        .mc-card {
+            background-color: #f7f7f7;
+            border: 4px solid var(--mc-stone);
+            box-shadow: 6px 6px 0 #666;
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+        }
+        .mc-button {
+            background-color: var(--mc-green);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: 3px solid #3d793e;
+            box-shadow: 2px 2px 0 #3d793e;
+            transition: all 0.1s ease-out;
+        }
+        .mc-button:hover {
+            background-color: #6bcc6e;
+            box-shadow: 4px 4px 0 #3d793e;
+            transform: translate(-2px, -2px);
+        }
+        .mc-input {
+            border: 2px solid #a9a9a9;
+            padding: 0.5rem;
+            background-color: white;
+        }
+        .mc-input:focus, .mc-textarea:focus {
+            border-color: var(--mc-green);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(90, 166, 92, 0.5);
+        }
+
+        /* Complaint Cube Styling */
+        .complaint-cube {
+            border: 3px solid #3d793e;
+            box-shadow: 4px 4px 0 #3d793e;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+        .complaint-cube:hover {
+            box-shadow: 6px 6px 0 #3d793e;
+            transform: translate(-2px, -2px);
+        }
+        
+        /* Specific Cube Colors */
+        .cube-griefing { background-color: var(--mc-accent-red); color: white; }
+        .cube-hacking { background-color: var(--mc-accent-blue); color: white; }
+        .cube-harassment { background-color: #b8860b; color: white; } 
+        .cube-staff-abuse { background-color: #3b82f6; color: white; }
+        .cube-bug { background-color: #d4d4dd; color: #1f2937; }
+
+        .admin-action-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            line-height: 1;
+            border-radius: 4px;
+            font-weight: 700;
+            box-shadow: 1px 1px 0 #3d793e;
+            transition: all 0.1s ease-out;
+        }
+        .admin-action-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 2px 2px 0 #3d793e;
+        }
+
+        @media (max-width: 640px) {
+            .mc-header h1 {
+                font-size: 1.875rem;
+            }
+        }
+    </style>
+    <!-- Lucide icons for visual appeal -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen">
+
+    <!-- Header Section -->
+    <header class="mc-header p-6 text-white text-center">
+        <h1 class="text-4xl md:text-5xl font-black uppercase tracking-wider">Arcadia SMP Complaint Portal</h1>
+        <p class="mt-2 text-xl font-medium">Player Reporting for a Better Community</p>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <!-- Loading and Auth Indicator -->
+        <div id="loading-spinner" class="text-center p-8 text-lg font-bold">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-mc-green border-t-transparent rounded-full mr-2"></div>
+            Authenticating and initializing...
+        </div>
+
+        <!-- --- Screen 1: Name Entry --- -->
+        <div id="name-entry-screen" class="hidden max-w-md mx-auto">
+            <div class="mc-card p-6 text-center">
+                <h2 class="text-3xl font-bold mb-4 text-mc-dirt">Welcome to Arcadia SMP!</h2>
+                <p class="text-gray-600 mb-6">Please enter your Minecraft name to proceed.</p>
+
+                <form id="name-entry-form" class="space-y-4">
+                    <div>
+                        <label for="player-name-input" class="block text-lg font-semibold mb-1 text-left">Your Minecraft Username</label>
+                        <input type="text" id="player-name-input" class="mc-input w-full rounded-md" placeholder="Enter your username" required>
+                    </div>
+
+                    <button type="submit" class="mc-button w-full rounded-md uppercase font-black tracking-wider transition duration-150 mt-4">
+                        Proceed
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- --- Screen 2: Complaint Cubes Selection (USER VIEW) --- -->
+        <div id="cubes-screen" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <section class="lg:col-span-2">
+                <div class="mc-card p-6">
+                    <h2 class="text-3xl font-bold mb-6 text-mc-dirt border-b-2 pb-2 border-mc-green">Step 1: Select Complaint Type</h2>
+                    
+                    <!-- Cube Boxes for Complaint Type -->
+                    <div id="complaint-cubes" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                        <!-- CUBES WILL BE GENERATED HERE -->
+                    </div>
+                    <p class="text-gray-600 italic mt-4 text-center">Click a cube to proceed to the detailed report form.</p>
+                </div>
+            </section>
+
+            <!-- Sidebar (Reporter Info & History) for USER -->
+            <aside class="lg:col-span-1 space-y-8">
+                <!-- User Info Card -->
+                <div class="mc-card p-4 bg-yellow-100 border-2 border-yellow-500 rounded-lg text-sm">
+                    <p class="font-bold mb-1">Reporter: <span id="reporter-name-display-user" class="text-mc-dirt text-lg font-extrabold"></span></p>
+                </div>
+
+                <!-- Recent Complaints Card -->
+                <div class="mc-card p-6">
+                    <h3 class="text-2xl font-bold mb-4 text-mc-dirt border-b-2 pb-2 border-mc-green">Your Recent Reports</h3>
+                    <ul id="user-complaints-list" class="space-y-3">
+                        <li class="text-gray-500">Loading history...</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+
+        <!-- --- Screen 3: Complaint Form Details (USER VIEW) --- -->
+        <div id="form-details-screen" class="hidden max-w-2xl mx-auto">
+            <div class="mc-card p-6">
+                <h2 class="text-3xl font-bold mb-2 text-mc-dirt">Step 2: Detail Your Report</h2>
+                <h3 id="form-title-type" class="text-xl font-semibold mb-6 text-mc-green">Complaint Type: [Type]</h3>
+
+                <form id="complaint-form" class="space-y-4">
+                    <!-- Hidden field for selected complaint type -->
+                    <input type="hidden" id="selected-type" required>
+                    
+                    <!-- Target Player Name (MANDATORY) -->
+                    <div>
+                        <label for="target-name" class="block text-lg font-semibold mb-1">Target Player/Entity <span class="text-red-600">*</span></label>
+                        <input type="text" id="target-name" class="mc-input w-full rounded-md" placeholder="The player, staff member, or bug name" required>
+                    </div>
+
+                    <!-- Complaint Details (MANDATORY) -->
+                    <div>
+                        <label for="details" class="block text-lg font-semibold mb-1">Detailed Description <span class="text-red-600">*</span></label>
+                        <textarea id="details" rows="5" class="mc-input mc-textarea w-full rounded-md" placeholder="Describe the incident, including time, date, and location (coordinates if possible)." required></textarea>
+                    </div>
+                    
+                    <!-- Evidence File (Image/Video) -->
+                    <div>
+                        <label for="evidence-file-upload" class="block text-lg font-semibold mb-1">Evidence File (Image/Video)</label>
+                        <input type="file" id="evidence-file-upload" class="mc-input w-full rounded-md p-1.5 bg-gray-100" accept="image/*,video/*">
+                        <p class="text-sm text-gray-500 mt-1">Select an image or video from your device. (Note: **File upload is simulated.** The actual file is not stored in this demo.)</p>
+                    </div>
+
+                    <!-- Submission Button -->
+                    <button type="submit" class="mc-button w-full rounded-md uppercase font-black tracking-wider transition duration-150">
+                        Submit Complaint
+                    </button>
+                    
+                    <button type="button" id="back-to-cubes-btn" class="mc-button bg-gray-400 hover:bg-gray-500 border-gray-600 hover:shadow-gray-600 w-full rounded-md uppercase font-black tracking-wider transition duration-150 mt-2">
+                        ← Back to Category Select
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- --- Screen 4: Admin Dashboard (ADMIN VIEW) --- -->
+        <div id="admin-dashboard-screen" class="hidden max-w-6xl mx-auto">
+            <div class="mc-card p-6 bg-red-50 border-4 border-mc-admin-red">
+                <h2 class="text-3xl font-black mb-4 uppercase text-mc-admin-red border-b-4 pb-2 border-mc-admin-red">Admin Dashboard: All Server Reports</h2>
+                <div class="p-3 mb-6 bg-red-200 border-2 border-red-500 rounded-md text-sm">
+                    <p class="font-bold">Logged in as: <span id="reporter-name-display-admin" class="text-red-700 text-lg font-extrabold">ADMIN</span></p>
+                    <p class="text-xs text-red-600 mt-1">Use **Acknowledge** (Seen) and **Mark Resolved** (Solved) to manage reports. Status updates are visible to the submitting player in real-time.</p>
+                </div>
+                
+                <ul id="admin-complaints-list" class="space-y-4">
+                    <li class="text-gray-500">Loading all reports...</li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Success Message Modal (Hidden by Default) -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div id="modal-content" class="mc-card p-8 w-full max-w-md text-center">
+            <!-- Content filled by showModal function -->
+        </div>
+    </div>
+
+
+    <!-- Firebase setup and main application logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, limit, setLogLevel, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: Global variables are provided by the hosting environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Admin code constant
+        const ADMIN_CODE = '9935'; 
+
+        // --- Global State & Firebase Init ---
+        setLogLevel('Debug');
+        let db;
+        let auth;
+        let userId = null;
+        let playerName = null; // Will be set by the initial form
+        let isAdmin = false;
+
+        // DOM elements
+        const nameEntryScreen = document.getElementById('name-entry-screen'); // Screen 1
+        const cubesScreen = document.getElementById('cubes-screen'); // Screen 2 (User)
+        const formDetailsScreen = document.getElementById('form-details-screen'); // Screen 3 (User)
+        const adminDashboardScreen = document.getElementById('admin-dashboard-screen'); // Screen 4 (Admin)
+        
+        const nameEntryForm = document.getElementById('name-entry-form');
+        const form = document.getElementById('complaint-form');
+        const selectedTypeInput = document.getElementById('selected-type');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const formTitleType = document.getElementById('form-title-type');
+        const modal = document.getElementById('message-modal');
+
+        // Lists containers (different for user/admin)
+        const userListContainer = document.getElementById('user-complaints-list');
+        const adminListContainer = document.getElementById('admin-complaints-list');
+        const reporterNameDisplayUser = document.getElementById('reporter-name-display-user');
+        const reporterNameDisplayAdmin = document.getElementById('reporter-name-display-admin');
+
+        // Complaint Categories for the cubes
+        const complaintCategories = [
+            { id: 'Griefing', title: 'Griefing', description: 'Unauthorized building/chest damage.', icon: 'bomb', color: 'cube-griefing' },
+            { id: 'Hacking', title: 'Hacking/Cheating', description: 'X-ray, Fly hacks, or other exploits.', icon: 'shield-off', color: 'cube-hacking' },
+            { id: 'Harassment', title: 'Harassment/Toxic', description: 'Inappropriate language or bullying.', icon: 'skull', color: 'cube-harassment' },
+            { id: 'StaffAbuse', title: 'Staff Misconduct', description: 'Reporting a staff member\'s behavior.', icon: 'user-x', color: 'cube-staff-abuse' },
+            { id: 'Bug', title: 'Technical Bug', description: 'Server lag, crashes, or broken features.', icon: 'bug', color: 'cube-bug' },
+            { id: 'Other', title: 'Other Issue', description: 'Something that does not fit above.', icon: 'message-square', color: 'mc-card' }
+        ];
+
+        // --- Screen 1 Logic (Name Entry & Admin Check) ---
+        nameEntryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const nameInput = document.getElementById('player-name-input');
+            playerName = nameInput.value.trim();
+
+            if (!playerName) {
+                showModal('Input Required', 'Please enter your Minecraft Username.', 'bg-red-500');
+                return;
+            }
+
+            // Set Admin status and update UI elements
+            isAdmin = (playerName === ADMIN_CODE);
+            reporterNameDisplayUser.textContent = playerName;
+            reporterNameDisplayAdmin.textContent = isAdmin ? 'ADMIN (9935)' : playerName; // Show code in admin view
+            
+            // Proceed to the correct screen
+            nameEntryScreen.classList.add('hidden');
+            
+            if (isAdmin) {
+                // Show Admin Dashboard (Screen 4)
+                adminDashboardScreen.classList.remove('hidden');
+            } else {
+                // Show User Cubes Screen (Screen 2)
+                cubesScreen.classList.remove('hidden'); 
+                renderCubes();
+            }
+            
+            // Start the real-time listener for the respective view
+            setupRealtimeListener();
+        });
+
+
+        // --- UI Functions ---
+
+        function renderCubes() {
+            const container = document.getElementById('complaint-cubes');
+            container.innerHTML = complaintCategories.map(cat => `
+                <div class="complaint-cube ${cat.color} p-4 rounded-md flex flex-col items-center text-center" data-id="${cat.id}" data-title="${cat.title}">
+                    <i data-lucide="${cat.icon}" class="w-8 h-8 mb-2"></i>
+                    <p class="font-bold text-lg">${cat.title}</p>
+                    <p class="text-xs opacity-80 mt-1">${cat.description}</p>
+                </div>
+            `).join('');
+            lucide.createIcons(); // Initialize Lucide icons
+
+            // Add click listeners to cubes
+            document.querySelectorAll('.complaint-cube').forEach(cube => {
+                cube.addEventListener('click', () => handleCubeSelection(cube));
+            });
+        }
+
+        function handleCubeSelection(selectedCube) {
+            const typeId = selectedCube.dataset.id;
+            const typeTitle = selectedCube.dataset.title;
+
+            // Set the selected type
+            selectedTypeInput.value = typeId;
+            formTitleType.textContent = `Complaint Type: ${typeTitle}`;
+
+            // Transition: Hide Screen 2 (Cubes) and Show Screen 3 (Form Details)
+            cubesScreen.classList.add('hidden');
+            formDetailsScreen.classList.remove('hidden');
+        }
+
+        function showModal(title, message, colorClass) {
+            const modalContent = document.getElementById('modal-content');
+            const titleColor = colorClass.includes('red') ? 'text-red-600' : 'text-mc-green';
+            modalContent.innerHTML = `
+                <h3 class="text-3xl font-bold ${titleColor} mb-4">${title}</h3>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <button id="close-modal-btn-inner" class="mc-button rounded-md uppercase font-bold text-sm">Close</button>
+            `;
+            modal.classList.remove('hidden');
+            
+            document.getElementById('close-modal-btn-inner').onclick = () => {
+                modal.classList.add('hidden');
+            };
+        }
+
+        // --- Screen 3 Back Button Logic ---
+        document.getElementById('back-to-cubes-btn').addEventListener('click', () => {
+            formDetailsScreen.classList.add('hidden');
+            cubesScreen.classList.remove('hidden');
+        });
+
+        // --- Firebase Functions ---
+
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        loadingSpinner.classList.add('hidden');
+                        
+                        // Show Screen 1 (Name Entry) - wait for player name
+                        nameEntryScreen.classList.remove('hidden');
+                    } else {
+                        console.error("Authentication failed or user signed out.");
+                        loadingSpinner.textContent = 'Error: Could not authenticate user. Please try refreshing.';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase or signing in:", error);
+                loadingSpinner.textContent = 'Error loading application. Check console for details.';
+            }
+        }
+
+        function getComplaintsCollection() {
+            // Path: artifacts/{appId}/public/data/complaints (5 segments)
+            return collection(db, `artifacts/${appId}/public/data/complaints`);
+        }
+
+        // --- Firestore Status Update Functions (Admin Only) ---
+
+        async function updateComplaintStatus(docId, newStatus) {
+            if (!isAdmin) {
+                showModal('Unauthorized', 'You do not have permission to update complaint statuses.', 'bg-red-500');
+                return;
+            }
+
+            const complaintRef = doc(db, getComplaintsCollection().path, docId);
+
+            try {
+                await updateDoc(complaintRef, {
+                    status: newStatus,
+                    lastUpdated: serverTimestamp() 
+                });
+                
+            } catch (error) {
+                console.error("Error updating complaint status:", error);
+                showModal('Update Failed', `Could not update status: ${error.message}`, 'bg-red-500');
+            }
+        }
+        // Make it accessible globally for inline onclick
+        window.updateComplaintStatus = updateComplaintStatus;
+
+
+        function setupRealtimeListener() {
+            if (!userId) {
+                console.error("Cannot set up listener: User ID is missing.");
+                return;
+            }
+
+            let q;
+            const complaintCollection = getComplaintsCollection();
+            const targetListContainer = isAdmin ? adminListContainer : userListContainer;
+
+            if (isAdmin) {
+                // Admin: See all complaints (latest 20)
+                q = query(complaintCollection, limit(20)); 
+            } else {
+                // Regular Player: Filter by their own complainantId (latest 10)
+                q = query(complaintCollection, where("complainantId", "==", userId), limit(10));
+            }
+
+            onSnapshot(q, (snapshot) => {
+                let reports = [];
+                snapshot.docs.forEach(doc => {
+                    reports.push({ id: doc.id, ...doc.data() }); 
+                });
+
+                // Sort client-side by timestamp (descending)
+                reports.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                    const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                    return timeB - timeA;
+                });
+
+                targetListContainer.innerHTML = '';
+                if (reports.length === 0) {
+                    const message = isAdmin ? 'No complaints have been filed on the server yet.' : 'No complaints submitted by you yet.';
+                    targetListContainer.innerHTML = `<li class="text-gray-500 italic p-3">${message}</li>`;
+                    return;
+                }
+
+                reports.forEach(complaint => {
+                    // Determine status color
+                    let statusColor = 'text-blue-600';
+                    if (complaint.status === 'Under Review') statusColor = 'text-yellow-600'; // "Seen"
+                    else if (complaint.status === 'Resolved') statusColor = 'text-green-600'; // "Solved"
+
+                    // Admin Actions HTML (only visible on Admin Dashboard)
+                    let adminActions = '';
+                    if (isAdmin) {
+                        adminActions = `
+                            <div class="mt-2 space-x-2 flex flex-wrap gap-2">
+                                ${complaint.status !== 'Under Review' ? 
+                                    // Acknowledge button - sets status to 'Under Review' (Seen)
+                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-700">Acknowledge (Seen)</button>` 
+                                    : ''
+                                }
+                                ${complaint.status !== 'Resolved' ? 
+                                    // Mark Resolved button - sets status to 'Resolved' (Solved)
+                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-500 hover:bg-green-600 text-white border-green-700">Mark Resolved (Solved)</button>`
+                                    : ''
+                                }
+                            </div>
+                        `;
+                    }
+                    
+                    // Main Report Display Detail
+                    let reportDetail;
+                    if (isAdmin) {
+                        reportDetail = `
+                            <p class="font-bold text-lg text-mc-dirt">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
+                            <p class="text-xs text-red-600 font-semibold">Reported by: ${complaint.complainantName}</p>
+                        `;
+                    } else {
+                        reportDetail = `
+                            <p class="font-bold">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
+                        `;
+                    }
+
+                    const evidenceStatus = complaint.evidence 
+                        ? `<span class="text-xs text-yellow-600 font-medium">${complaint.evidence.substring(0, 20)}...</span>`
+                        : `<span class="text-xs text-gray-500">No Evidence</span>`;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'p-4 bg-white border-2 border-mc-stone rounded-md transition duration-100 hover:border-mc-green';
+                    li.innerHTML = `
+                        <div class="${isAdmin ? 'flex flex-col' : ''}">
+                            <div>
+                                ${reportDetail}
+                                <p class="text-sm text-gray-700 truncate mt-1">${complaint.details}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2 flex ${isAdmin ? 'justify-between' : 'justify-start'} items-center text-xs">
+                            <p>Status: <span class="font-bold ${statusColor}">${complaint.status}</span> | Evidence: ${evidenceStatus}</p>
+                            ${adminActions}
+                        </div>
+                    `;
+                    targetListContainer.appendChild(li);
+                });
+            }, (error) => {
+                console.error("Error fetching real-time complaints:", error);
+                targetListContainer.innerHTML = '<li class="text-red-500 p-3">Error loading complaints.</li>';
+            });
+        }
+
+        // --- Form Submission Handler (User) ---
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const targetName = document.getElementById('target-name').value.trim();
+            const complaintType = selectedTypeInput.value; 
+            const details = document.getElementById('details').value.trim();
+            
+            if (!complaintType || !targetName || !details) {
+                showModal('Validation Error', 'A complaint type must be selected and all required fields must be filled.', 'bg-red-500');
+                return;
+            }
+
+            const fileInput = document.getElementById('evidence-file-upload');
+            const file = fileInput.files[0];
+
+            let evidencePayload = null;
+            if (file) {
+                evidencePayload = `File selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB). Stored as placeholder.`;
+            }
+            
+            const complaintData = {
+                complainantName: playerName,
+                complainantId: userId,
+                targetName: targetName,
+                type: complaintType,
+                details: details,
+                evidence: evidencePayload, 
+                status: 'Pending Review',
+                timestamp: serverTimestamp()
+            };
+
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+
+            try {
+                await addDoc(getComplaintsCollection(), complaintData);
+
+                showModal('Report Submitted!', `Thank you, ${playerName}! Your report about ${targetName} has been logged.`, 'bg-mc-green');
+
+                // Clear form fields, and return to cube selection
+                document.getElementById('target-name').value = '';
+                document.getElementById('details').value = '';
+                document.getElementById('evidence-file-upload').value = ''; 
+                selectedTypeInput.value = '';
+
+                // Go back to the cubes screen
+                formDetailsScreen.classList.add('hidden');
+                cubesScreen.classList.remove('hidden');
+
+
+            } catch (error) {
+                console.error("Error submitting complaint:", error);
+                showModal('Submission Failed', `There was an error submitting your report: ${error.message}.`, 'bg-red-500');
+            } finally {
+                submitBtn.textContent = 'Submit Complaint';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // --- Start Application ---
+        initFirebase();
+    </script>
+</body>
+</html>
