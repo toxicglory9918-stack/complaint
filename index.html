@@ -6,98 +6,164 @@
     <title>Arcadia SMP - Player Complaint Form</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Inter font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght400;700;900&display=swap" rel="stylesheet">
+    <!-- Load New Fonts: Bebas Neue for headers, Roboto Mono for console text -->
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom Minecraft-like styling */
+        /* --- New Obsidian/Glowstone Theme & Animation Setup --- */
         :root {
-            --mc-green: #5aa65c;
-            --mc-dirt: #8b4513;
-            --mc-stone: #a9a9a9;
-            --mc-bg: #e6e6e6;
-            --mc-accent-blue: #5b7194; /* for command block/blue glass */
-            --mc-accent-red: #cc5252; /* for redstone block */
-            --mc-admin-red: #c53030;
+            --mc-primary: #FFA500; /* Glowstone Orange/Action */
+            --mc-secondary: #D32F2F; /* Nether Red/Shadow */
+            --mc-bg: #1A1A1A; /* Obsidian Black */
+            --mc-card-bg: #2d2d2d; /* Dark Stone */
+            --mc-text: #F0F0F0; /* Light Text */
+            --mc-admin: #6A0DAD; /* Wither Purple */
+            --mc-admin-light: #9B59B6;
+            --mc-accent-blue: #3498DB;
+            --mc-accent-red: #E74C3C;
+            --mc-accent-yellow: #F1C40F;
         }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto Mono', monospace; /* Console feel */
             background-color: var(--mc-bg);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23d4d4d4' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/path%3E%3C/svg%3E");
+            color: var(--mc-text);
+            /* Nether-like pixel grid background */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23333333' fill-opacity='0.4'%3E%3Cpath d='M0 0h1v1H0V0zm3 0h1v1H3V0zm4 0h1v1H7V0zm-2 2h1v1H5V2zm-4 4h1v1H1V6zm3 1h1v1H4V7z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
+            min-height: 100vh;
         }
+        
+        /* Keyframe Animations */
+        @keyframes fadeInSlide {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes flicker {
+            0%, 100% { box-shadow: 0 0 5px var(--mc-primary); }
+            50% { box-shadow: 0 0 10px var(--mc-primary), 0 0 15px rgba(255, 165, 0, 0.4); }
+        }
+
         .mc-header {
-            background-color: var(--mc-green);
-            border-bottom: 6px solid #3d793e;
-            text-shadow: 2px 2px 0 #3d793e;
+            background-color: var(--mc-primary);
+            border-bottom: 8px solid var(--mc-secondary);
+            text-shadow: 3px 3px 0 var(--mc-secondary);
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.1em;
+            color: black;
         }
+
+        /* Enhanced Card Styling (Obsidian Block) */
         .mc-card {
-            background-color: #f7f7f7;
-            border: 4px solid var(--mc-stone);
-            box-shadow: 6px 6px 0 #666;
-            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+            background-color: var(--mc-card-bg);
+            border: 4px solid var(--mc-secondary);
+            box-shadow: 8px 8px 0 var(--mc-secondary);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            color: var(--mc-text);
         }
+
+        /* Enhanced Button Styling (Glowstone Block) */
         .mc-button {
-            background-color: var(--mc-green);
-            color: white;
+            background-color: var(--mc-primary);
+            color: var(--mc-secondary);
             padding: 0.75rem 1.5rem;
-            border: 3px solid #3d793e;
-            box-shadow: 2px 2px 0 #3d793e;
+            border: 4px solid var(--mc-secondary);
+            box-shadow: 4px 4px 0 var(--mc-secondary);
             transition: all 0.1s ease-out;
+            font-weight: 700;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.05em;
         }
         .mc-button:hover {
-            background-color: #6bcc6e;
-            box-shadow: 4px 4px 0 #3d793e;
+            background-color: #FFB333; /* Slightly lighter orange */
+            box-shadow: 6px 6px 0 var(--mc-secondary);
             transform: translate(-2px, -2px);
         }
+        .mc-button:active {
+            box-shadow: 0 0 0 var(--mc-secondary);
+            transform: translate(4px, 4px);
+        }
+
+        /* Animated Input Field Focus */
         .mc-input {
-            border: 2px solid #a9a9a9;
-            padding: 0.5rem;
-            background-color: white;
+            border: 3px solid #888;
+            padding: 0.6rem;
+            background-color: #1A1A1A;
+            color: var(--mc-text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
         }
         .mc-input:focus, .mc-textarea:focus {
-            border-color: var(--mc-green);
+            border-color: var(--mc-primary);
             outline: none;
-            box-shadow: 0 0 0 2px rgba(90, 166, 92, 0.5);
+            /* Glowing effect on focus */
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.4), inset 0 0 5px var(--mc-primary);
         }
 
         /* Complaint Cube Styling */
         .complaint-cube {
-            border: 3px solid #3d793e;
-            box-shadow: 4px 4px 0 #3d793e;
+            border: 3px solid var(--mc-secondary);
+            box-shadow: 4px 4px 0 var(--mc-secondary);
             cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
+            transition: all 0.2s ease-out;
+            animation: flicker 2s ease-in-out infinite alternate; /* Subtle flicker */
         }
         .complaint-cube:hover {
-            box-shadow: 6px 6px 0 #3d793e;
-            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0 var(--mc-secondary);
+            transform: translate(-4px, -4px) scale(1.02);
+            animation-play-state: paused;
+        }
+        .complaint-cube.selected {
+            animation: pulse-effect 0.8s ease-in-out;
+            border-color: var(--mc-primary);
+            box-shadow: 6px 6px 0 var(--mc-primary);
+            background-color: #3d3d3d !important; 
+            color: var(--mc-primary) !important;
         }
         
-        /* Specific Cube Colors */
+        /* Specific Cube Colors (Retaining high contrast) */
         .cube-griefing { background-color: var(--mc-accent-red); color: white; }
         .cube-hacking { background-color: var(--mc-accent-blue); color: white; }
-        .cube-harassment { background-color: #b8860b; color: white; } 
-        .cube-staff-abuse { background-color: #3b82f6; color: white; }
-        .cube-bug { background-color: #d4d4dd; color: #1f2937; }
+        .cube-harassment { background-color: var(--mc-accent-yellow); color: #1A1A1A; } 
+        .cube-staff-abuse { background-color: #800080; color: white; } /* Purple Nether Accent */
+        .cube-bug { background-color: #555; color: var(--mc-text); } /* Dark Gray */
+
+        .admin-report-card {
+            background-color: #333;
+            border: 2px solid #555;
+            transition: all 0.2s;
+            cursor: default;
+            animation: fadeInSlide 0.4s ease-out; /* Animation applied by JS, fallback */
+        }
+        .admin-report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 165, 0, 0.2); /* Glowstone glow on hover */
+            border-color: var(--mc-primary);
+        }
 
         .admin-action-btn {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            line-height: 1;
-            border-radius: 4px;
-            font-weight: 700;
-            box-shadow: 1px 1px 0 #3d793e;
-            transition: all 0.1s ease-out;
+            background-color: var(--mc-card-bg);
+            color: var(--mc-text);
+            border: 2px solid var(--mc-secondary);
+            box-shadow: 2px 2px 0 var(--mc-secondary);
         }
         .admin-action-btn:hover {
-            transform: translate(-1px, -1px);
-            box-shadow: 2px 2px 0 #3d793e;
+            background-color: #444;
+            box-shadow: 4px 4px 0 var(--mc-secondary);
+            transform: translate(-2px, -2px);
         }
 
-        @media (max-width: 640px) {
-            .mc-header h1 {
-                font-size: 1.875rem;
-            }
+        /* Utility for Animated Screen Transitions (More aggressive slide) */
+        .screen-container {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            opacity: 0;
+            transform: translateY(40px);
         }
+        .screen-container.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hidden { display: none !important; }
+
     </style>
     <!-- Lucide icons for visual appeal -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -105,62 +171,64 @@
 <body class="min-h-screen">
 
     <!-- Header Section -->
-    <header class="mc-header p-6 text-white text-center">
-        <h1 class="text-4xl md:text-5xl font-black uppercase tracking-wider">Arcadia SMP Complaint Portal</h1>
-        <p class="mt-2 text-xl font-medium">Player Reporting for a Better Community</p>
+    <header class="mc-header p-6 text-center">
+        <!-- MODIFIED H1 TITLE -->
+        <h1 class="text-4xl md:text-5xl font-black uppercase tracking-wider text-black">MINECRAFT_2613</h1>
+        <!-- Removed: System Status: Awaiting User Input -->
     </header>
 
     <main class="container mx-auto p-4 md:p-8">
 
         <!-- Loading and Auth Indicator -->
         <div id="loading-spinner" class="text-center p-8 text-lg font-bold">
-            <div class="animate-spin inline-block w-8 h-8 border-4 border-mc-green border-t-transparent rounded-full mr-2"></div>
-            Authenticating and initializing...
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-mc-primary border-t-transparent rounded-full mr-2"></div>
+            Authenticating & Initializing...
         </div>
 
         <!-- --- Screen 1: Name Entry --- -->
-        <div id="name-entry-screen" class="hidden max-w-md mx-auto">
-            <div class="mc-card p-6 text-center">
-                <h2 class="text-3xl font-bold mb-4 text-mc-dirt">Welcome to Arcadia SMP!</h2>
-                <p class="text-gray-600 mb-6">Please enter your Minecraft name to proceed.</p>
+        <div id="name-entry-screen" class="hidden max-w-md mx-auto screen-container">
+            <div class="mc-card p-6 text-center rounded-lg">
+                <h2 class="text-3xl font-bold mb-4" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">ACCESS TERMINAL</h2>
+                <p class="text-gray-400 mb-6">Enter your Minecraft name to access player functions.</p>
 
                 <form id="name-entry-form" class="space-y-4">
                     <div>
-                        <label for="player-name-input" class="block text-lg font-semibold mb-1 text-left">Your Minecraft Username</label>
+                        <label for="player-name-input" class="block text-lg font-semibold mb-1 text-left" style="color: var(--mc-primary);">> USERNAME</label>
                         <input type="text" id="player-name-input" class="mc-input w-full rounded-md" placeholder="Enter your username" required>
                     </div>
 
-                    <button type="submit" class="mc-button w-full rounded-md uppercase font-black tracking-wider transition duration-150 mt-4">
-                        Proceed
+                    <button type="submit" class="mc-button w-full rounded-md mt-4">
+                        [ LOAD INTERFACE ]
                     </button>
                 </form>
             </div>
         </div>
 
         <!-- --- Screen 2: Complaint Cubes Selection (USER VIEW) --- -->
-        <div id="cubes-screen" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div id="cubes-screen" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8 screen-container">
             <section class="lg:col-span-2">
-                <div class="mc-card p-6">
-                    <h2 class="text-3xl font-bold mb-6 text-mc-dirt border-b-2 pb-2 border-mc-green">Step 1: Select Complaint Type</h2>
+                <div class="mc-card p-6 rounded-lg">
+                    <h2 class="text-3xl font-bold mb-6 border-b-2 pb-2" style="color: var(--mc-primary); border-color: var(--mc-secondary); font-family: 'Bebas Neue', sans-serif;">REPORT CATEGORY SELECTION</h2>
                     
                     <!-- Cube Boxes for Complaint Type -->
-                    <div id="complaint-cubes" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    <div id="complaint-cubes" class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
                         <!-- CUBES WILL BE GENERATED HERE -->
                     </div>
-                    <p class="text-gray-600 italic mt-4 text-center">Click a cube to proceed to the detailed report form.</p>
+                    <p class="text-gray-400 italic mt-4 text-center text-sm">Select the type of transgression.</p>
                 </div>
             </section>
 
             <!-- Sidebar (Reporter Info & History) for USER -->
             <aside class="lg:col-span-1 space-y-8">
                 <!-- User Info Card -->
-                <div class="mc-card p-4 bg-yellow-100 border-2 border-yellow-500 rounded-lg text-sm">
-                    <p class="font-bold mb-1">Reporter: <span id="reporter-name-display-user" class="text-mc-dirt text-lg font-extrabold"></span></p>
+                <div class="mc-card p-4 bg-gray-900 border-2 border-mc-primary rounded-lg text-sm">
+                    <p class="font-bold mb-1" style="color: var(--mc-primary);">AUTHORISED USER:</p>
+                    <p id="reporter-name-display-user" class="text-xl font-extrabold"></p>
                 </div>
 
                 <!-- Recent Complaints Card -->
-                <div class="mc-card p-6">
-                    <h3 class="text-2xl font-bold mb-4 text-mc-dirt border-b-2 pb-2 border-mc-green">Your Recent Reports</h3>
+                <div class="mc-card p-6 rounded-lg">
+                    <h3 class="text-2xl font-bold mb-4 border-b-2 pb-2" style="color: var(--mc-primary); border-color: var(--mc-secondary); font-family: 'Bebas Neue', sans-serif;">REPORT LOG</h3>
                     <ul id="user-complaints-list" class="space-y-3">
                         <li class="text-gray-500">Loading history...</li>
                     </ul>
@@ -169,53 +237,52 @@
         </div>
 
         <!-- --- Screen 3: Complaint Form Details (USER VIEW) --- -->
-        <div id="form-details-screen" class="hidden max-w-2xl mx-auto">
-            <div class="mc-card p-6">
-                <h2 class="text-3xl font-bold mb-2 text-mc-dirt">Step 2: Detail Your Report</h2>
-                <h3 id="form-title-type" class="text-xl font-semibold mb-6 text-mc-green">Complaint Type: [Type]</h3>
+        <div id="form-details-screen" class="hidden max-w-2xl mx-auto screen-container">
+            <div class="mc-card p-6 rounded-lg">
+                <h2 class="text-3xl font-bold mb-2" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">INPUT REPORT DATA</h2>
+                <h3 id="form-title-type" class="text-xl font-semibold mb-6 text-gray-400">Complaint Type: [Type]</h3>
 
                 <form id="complaint-form" class="space-y-4">
-                    <!-- Hidden field for selected complaint type -->
                     <input type="hidden" id="selected-type" required>
                     
                     <!-- Target Player Name (MANDATORY) -->
                     <div>
-                        <label for="target-name" class="block text-lg font-semibold mb-1">Target Player/Entity <span class="text-red-600">*</span></label>
-                        <input type="text" id="target-name" class="mc-input w-full rounded-md" placeholder="The player, staff member, or bug name" required>
+                        <label for="target-name" class="block text-lg font-semibold mb-1">TARGET <span class="text-red-500">*</span></label>
+                        <input type="text" id="target-name" class="mc-input w-full rounded-md" placeholder="The player/entity being reported" required>
                     </div>
 
                     <!-- Complaint Details (MANDATORY) -->
                     <div>
-                        <label for="details" class="block text-lg font-semibold mb-1">Detailed Description <span class="text-red-600">*</span></label>
-                        <textarea id="details" rows="5" class="mc-input mc-textarea w-full rounded-md" placeholder="Describe the incident, including time, date, and location (coordinates if possible)." required></textarea>
+                        <label for="details" class="block text-lg font-semibold mb-1">DETAILS <span class="text-red-500">*</span></label>
+                        <textarea id="details" rows="5" class="mc-input mc-textarea w-full rounded-md" placeholder="Describe the incident, including time, date, and location." required></textarea>
                     </div>
                     
                     <!-- Evidence File (Image/Video) -->
                     <div>
-                        <label for="evidence-file-upload" class="block text-lg font-semibold mb-1">Evidence File (Image/Video)</label>
-                        <input type="file" id="evidence-file-upload" class="mc-input w-full rounded-md p-1.5 bg-gray-100" accept="image/*,video/*">
-                        <p class="text-sm text-gray-500 mt-1">Select an image or video from your device. (Note: **File upload is simulated.** The actual file is not stored in this demo.)</p>
+                        <label for="evidence-file-upload" class="block text-lg font-semibold mb-1">EVIDENCE FILE</label>
+                        <input type="file" id="evidence-file-upload" class="mc-input w-full rounded-md p-1.5 bg-gray-800" accept="image/*,video/*">
+                        <p class="text-sm text-gray-500 mt-1">File upload is simulated.</p>
                     </div>
 
                     <!-- Submission Button -->
-                    <button type="submit" class="mc-button w-full rounded-md uppercase font-black tracking-wider transition duration-150">
-                        Submit Complaint
+                    <button type="submit" class="mc-button w-full rounded-md">
+                        [ EXECUTE SUBMISSION ]
                     </button>
                     
-                    <button type="button" id="back-to-cubes-btn" class="mc-button bg-gray-400 hover:bg-gray-500 border-gray-600 hover:shadow-gray-600 w-full rounded-md uppercase font-black tracking-wider transition duration-150 mt-2">
-                        ← Back to Category Select
+                    <button type="button" id="back-to-cubes-btn" class="mc-button bg-gray-600 hover:bg-gray-700 border-gray-800 hover:shadow-gray-800 w-full rounded-md mt-2" style="color: var(--mc-text);">
+                        [ CANCEL & BACK ]
                     </button>
                 </form>
             </div>
         </div>
         
         <!-- --- Screen 4: Admin Dashboard (ADMIN VIEW) --- -->
-        <div id="admin-dashboard-screen" class="hidden max-w-6xl mx-auto">
-            <div class="mc-card p-6 bg-red-50 border-4 border-mc-admin-red">
-                <h2 class="text-3xl font-black mb-4 uppercase text-mc-admin-red border-b-4 pb-2 border-mc-admin-red">Admin Dashboard: All Server Reports</h2>
-                <div class="p-3 mb-6 bg-red-200 border-2 border-red-500 rounded-md text-sm">
-                    <p class="font-bold">Logged in as: <span id="reporter-name-display-admin" class="text-red-700 text-lg font-extrabold">ADMIN</span></p>
-                    <p class="text-xs text-red-600 mt-1">Use **Acknowledge** (Seen) and **Mark Resolved** (Solved) to manage reports. Status updates are visible to the submitting player in real-time.</p>
+        <div id="admin-dashboard-screen" class="hidden max-w-6xl mx-auto screen-container">
+            <div class="mc-card p-6 bg-gray-900 border-4" style="border-color: var(--mc-admin);">
+                <h2 class="text-3xl font-black mb-4 uppercase border-b-4 pb-2" style="color: var(--mc-admin); border-color: var(--mc-admin);">ADMIN CONTROL PANEL</h2>
+                <div class="p-3 mb-6 bg-gray-800 border-2 rounded-md text-sm" style="border-color: var(--mc-admin-light);">
+                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span id="reporter-name-display-admin" class="text-xl font-extrabold">ADMIN</span></p>
+                    <p class="text-xs text-gray-500 mt-1">Acknowledge (Seen) and Mark Resolved (Solved) actions are exclusive to this account.</p>
                 </div>
                 
                 <ul id="admin-complaints-list" class="space-y-4">
@@ -227,8 +294,8 @@
     </main>
 
     <!-- Success Message Modal (Hidden by Default) -->
-    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
-        <div id="modal-content" class="mc-card p-8 w-full max-w-md text-center">
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
+        <div id="modal-content" class="mc-card p-8 w-full max-w-md text-center rounded-lg" style="border-color: var(--mc-primary);">
             <!-- Content filled by showModal function -->
         </div>
     </div>
@@ -241,26 +308,38 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, where, limit, setLogLevel, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: Global variables are provided by the hosting environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // NOTE: When running locally (like from GitHub), we must provide a dummy configuration
+        // for Firebase to initialize without error. Data persistence will only work in the Canvas environment.
+
+        const DUMMY_FIREBASE_CONFIG = {
+            apiKey: "dummy-key-for-local-testing",
+            authDomain: "dummy-auth-domain",
+            projectId: "dummy-project-id",
+            storageBucket: "dummy-bucket",
+            messagingSenderId: "dummy-sender-id",
+            appId: "dummy-app-id"
+        };
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id-local';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DUMMY_FIREBASE_CONFIG;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Admin code constant
         const ADMIN_CODE = '9935'; 
+        const PRIMARY_COLOR = '#FFA500'; // Used for dynamic JS coloring
 
         // --- Global State & Firebase Init ---
         setLogLevel('Debug');
         let db;
         let auth;
         let userId = null;
-        let playerName = null; // Will be set by the initial form
+        let playerName = null;
         let isAdmin = false;
 
         // DOM elements
-        const nameEntryScreen = document.getElementById('name-entry-screen'); // Screen 1
-        const cubesScreen = document.getElementById('cubes-screen'); // Screen 2 (User)
-        const formDetailsScreen = document.getElementById('form-details-screen'); // Screen 3 (User)
-        const adminDashboardScreen = document.getElementById('admin-dashboard-screen'); // Screen 4 (Admin)
+        const nameEntryScreen = document.getElementById('name-entry-screen'); 
+        const cubesScreen = document.getElementById('cubes-screen'); 
+        const formDetailsScreen = document.getElementById('form-details-screen'); 
+        const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
         
         const nameEntryForm = document.getElementById('name-entry-form');
         const form = document.getElementById('complaint-form');
@@ -268,22 +347,64 @@
         const loadingSpinner = document.getElementById('loading-spinner');
         const formTitleType = document.getElementById('form-title-type');
         const modal = document.getElementById('message-modal');
-
-        // Lists containers (different for user/admin)
+        
         const userListContainer = document.getElementById('user-complaints-list');
         const adminListContainer = document.getElementById('admin-complaints-list');
         const reporterNameDisplayUser = document.getElementById('reporter-name-display-user');
         const reporterNameDisplayAdmin = document.getElementById('reporter-name-display-admin');
+        
+        const allScreens = [nameEntryScreen, cubesScreen, formDetailsScreen, adminDashboardScreen];
 
-        // Complaint Categories for the cubes
         const complaintCategories = [
-            { id: 'Griefing', title: 'Griefing', description: 'Unauthorized building/chest damage.', icon: 'bomb', color: 'cube-griefing' },
-            { id: 'Hacking', title: 'Hacking/Cheating', description: 'X-ray, Fly hacks, or other exploits.', icon: 'shield-off', color: 'cube-hacking' },
-            { id: 'Harassment', title: 'Harassment/Toxic', description: 'Inappropriate language or bullying.', icon: 'skull', color: 'cube-harassment' },
-            { id: 'StaffAbuse', title: 'Staff Misconduct', description: 'Reporting a staff member\'s behavior.', icon: 'user-x', color: 'cube-staff-abuse' },
-            { id: 'Bug', title: 'Technical Bug', description: 'Server lag, crashes, or broken features.', icon: 'bug', color: 'cube-bug' },
-            { id: 'Other', title: 'Other Issue', description: 'Something that does not fit above.', icon: 'message-square', color: 'mc-card' }
+            { id: 'Griefing', title: 'GRIEFING', description: 'Unauthorized building/chest damage.', icon: 'bomb', color: 'cube-griefing' },
+            { id: 'Hacking', title: 'HACKING', description: 'X-ray, Fly hacks, or other exploits.', icon: 'shield-off', color: 'cube-hacking' },
+            { id: 'Harassment', title: 'HARASSMENT', description: 'Inappropriate language or bullying.', icon: 'skull', color: 'cube-harassment' },
+            { id: 'StaffAbuse', title: 'STAFF MISCONDUCT', description: 'Reporting a staff member\'s behavior.', icon: 'user-x', color: 'cube-staff-abuse' },
+            { id: 'Bug', title: 'TECHNICAL BUG', description: 'Server lag, crashes, or broken features.', icon: 'bug', color: 'cube-bug' },
+            { id: 'Other', title: 'OTHER ISSUE', description: 'Something that does not fit above.', icon: 'message-square', color: 'mc-card' }
         ];
+
+        // --- Dynamic & Animated Screen Transition Function ---
+        function showScreen(targetElement) {
+            let activeElement = null;
+
+            allScreens.forEach(el => {
+                if (el.classList.contains('active')) {
+                    activeElement = el;
+                }
+            });
+
+            if (activeElement) {
+                // 1. Animate out the current screen
+                activeElement.classList.remove('active');
+                activeElement.style.opacity = '0';
+                activeElement.style.transform = 'translateY(-40px)';
+                
+                setTimeout(() => {
+                    activeElement.classList.add('hidden');
+                    activeElement.style.transform = 'translateY(40px)'; // Reset transform for next time
+
+                    // 2. Animate in the target screen
+                    targetElement.style.opacity = '0';
+                    targetElement.classList.remove('hidden');
+                    
+                    // Force a reflow to ensure the initial (hidden) state is applied
+                    void targetElement.offsetWidth; 
+
+                    targetElement.classList.add('active');
+                    targetElement.style.transform = 'translateY(0)';
+                    targetElement.style.opacity = '1';
+
+                }, 300); // Matches CSS transition duration
+            } else {
+                // Initial show
+                targetElement.classList.remove('hidden');
+                targetElement.classList.add('active');
+                targetElement.style.opacity = '1';
+                targetElement.style.transform = 'translateY(0)';
+            }
+        }
+
 
         // --- Screen 1 Logic (Name Entry & Admin Check) ---
         nameEntryForm.addEventListener('submit', (e) => {
@@ -293,28 +414,21 @@
             playerName = nameInput.value.trim();
 
             if (!playerName) {
-                showModal('Input Required', 'Please enter your Minecraft Username.', 'bg-red-500');
+                showModal('ACCESS DENIED', 'Please enter your Minecraft Username.', 'bg-red-500');
                 return;
             }
 
-            // Set Admin status and update UI elements
             isAdmin = (playerName === ADMIN_CODE);
             reporterNameDisplayUser.textContent = playerName;
-            reporterNameDisplayAdmin.textContent = isAdmin ? 'ADMIN (9935)' : playerName; // Show code in admin view
-            
-            // Proceed to the correct screen
-            nameEntryScreen.classList.add('hidden');
+            reporterNameDisplayAdmin.textContent = isAdmin ? 'ADMIN (9935)' : playerName;
             
             if (isAdmin) {
-                // Show Admin Dashboard (Screen 4)
-                adminDashboardScreen.classList.remove('hidden');
+                showScreen(adminDashboardScreen);
             } else {
-                // Show User Cubes Screen (Screen 2)
-                cubesScreen.classList.remove('hidden'); 
+                showScreen(cubesScreen); 
                 renderCubes();
             }
             
-            // Start the real-time listener for the respective view
             setupRealtimeListener();
         });
 
@@ -324,40 +438,40 @@
         function renderCubes() {
             const container = document.getElementById('complaint-cubes');
             container.innerHTML = complaintCategories.map(cat => `
-                <div class="complaint-cube ${cat.color} p-4 rounded-md flex flex-col items-center text-center" data-id="${cat.id}" data-title="${cat.title}">
+                <div class="complaint-cube ${cat.color} p-4 rounded-lg flex flex-col items-center text-center" data-id="${cat.id}" data-title="${cat.title}">
                     <i data-lucide="${cat.icon}" class="w-8 h-8 mb-2"></i>
                     <p class="font-bold text-lg">${cat.title}</p>
                     <p class="text-xs opacity-80 mt-1">${cat.description}</p>
                 </div>
             `).join('');
-            lucide.createIcons(); // Initialize Lucide icons
+            lucide.createIcons(); 
 
-            // Add click listeners to cubes
             document.querySelectorAll('.complaint-cube').forEach(cube => {
                 cube.addEventListener('click', () => handleCubeSelection(cube));
             });
         }
 
         function handleCubeSelection(selectedCube) {
+            document.querySelectorAll('.complaint-cube').forEach(c => c.classList.remove('selected'));
+            selectedCube.classList.add('selected');
+
             const typeId = selectedCube.dataset.id;
             const typeTitle = selectedCube.dataset.title;
 
-            // Set the selected type
             selectedTypeInput.value = typeId;
             formTitleType.textContent = `Complaint Type: ${typeTitle}`;
 
-            // Transition: Hide Screen 2 (Cubes) and Show Screen 3 (Form Details)
-            cubesScreen.classList.add('hidden');
-            formDetailsScreen.classList.remove('hidden');
+            showScreen(formDetailsScreen);
         }
 
         function showModal(title, message, colorClass) {
             const modalContent = document.getElementById('modal-content');
-            const titleColor = colorClass.includes('red') ? 'text-red-600' : 'text-mc-green';
+            const titleColor = colorClass.includes('red') ? 'text-red-500' : `text-[${PRIMARY_COLOR}]`;
+            
             modalContent.innerHTML = `
-                <h3 class="text-3xl font-bold ${titleColor} mb-4">${title}</h3>
-                <p class="text-gray-700 mb-6">${message}</p>
-                <button id="close-modal-btn-inner" class="mc-button rounded-md uppercase font-bold text-sm">Close</button>
+                <h3 class="text-3xl font-bold mb-4" style="color: ${colorClass.includes('red') ? '#EF4444' : PRIMARY_COLOR}; font-family: 'Bebas Neue', sans-serif;">${title}</h3>
+                <p class="text-gray-300 mb-6">${message}</p>
+                <button id="close-modal-btn-inner" class="mc-button rounded-md uppercase font-bold text-sm">CLOSE WINDOW</button>
             `;
             modal.classList.remove('hidden');
             
@@ -368,8 +482,8 @@
 
         // --- Screen 3 Back Button Logic ---
         document.getElementById('back-to-cubes-btn').addEventListener('click', () => {
-            formDetailsScreen.classList.add('hidden');
-            cubesScreen.classList.remove('hidden');
+            document.querySelectorAll('.complaint-cube').forEach(c => c.classList.remove('selected'));
+            showScreen(cubesScreen);
         });
 
         // --- Firebase Functions ---
@@ -383,6 +497,7 @@
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
+                    // Fallback to anonymous sign-in, which works with the dummy config
                     await signInAnonymously(auth);
                 }
                 
@@ -390,9 +505,7 @@
                     if (user) {
                         userId = user.uid;
                         loadingSpinner.classList.add('hidden');
-                        
-                        // Show Screen 1 (Name Entry) - wait for player name
-                        nameEntryScreen.classList.remove('hidden');
+                        showScreen(nameEntryScreen);
                     } else {
                         console.error("Authentication failed or user signed out.");
                         loadingSpinner.textContent = 'Error: Could not authenticate user. Please try refreshing.';
@@ -406,7 +519,6 @@
         }
 
         function getComplaintsCollection() {
-            // Path: artifacts/{appId}/public/data/complaints (5 segments)
             return collection(db, `artifacts/${appId}/public/data/complaints`);
         }
 
@@ -414,7 +526,7 @@
 
         async function updateComplaintStatus(docId, newStatus) {
             if (!isAdmin) {
-                showModal('Unauthorized', 'You do not have permission to update complaint statuses.', 'bg-red-500');
+                showModal('SECURITY BREACH', 'Unauthorized status update attempt.', 'bg-red-500');
                 return;
             }
 
@@ -428,10 +540,9 @@
                 
             } catch (error) {
                 console.error("Error updating complaint status:", error);
-                showModal('Update Failed', `Could not update status: ${error.message}`, 'bg-red-500');
+                showModal('UPDATE FAILED', `Could not update status: ${error.message}`, 'bg-red-500');
             }
         }
-        // Make it accessible globally for inline onclick
         window.updateComplaintStatus = updateComplaintStatus;
 
 
@@ -446,10 +557,8 @@
             const targetListContainer = isAdmin ? adminListContainer : userListContainer;
 
             if (isAdmin) {
-                // Admin: See all complaints (latest 20)
                 q = query(complaintCollection, limit(20)); 
             } else {
-                // Regular Player: Filter by their own complainantId (latest 10)
                 q = query(complaintCollection, where("complainantId", "==", userId), limit(10));
             }
 
@@ -459,74 +568,76 @@
                     reports.push({ id: doc.id, ...doc.data() }); 
                 });
 
-                // Sort client-side by timestamp (descending)
                 reports.sort((a, b) => {
                     const timeA = a.timestamp ? a.timestamp.seconds : 0;
                     const timeB = b.timestamp ? b.timestamp.seconds : 0;
                     return timeB - timeA;
                 });
 
+                // Clear container before adding new animated elements
                 targetListContainer.innerHTML = '';
                 if (reports.length === 0) {
-                    const message = isAdmin ? 'No complaints have been filed on the server yet.' : 'No complaints submitted by you yet.';
+                    const message = isAdmin ? 'NO ACTIVE REPORTS IN DATABASE.' : 'NO REPORTS SUBMITTED.';
                     targetListContainer.innerHTML = `<li class="text-gray-500 italic p-3">${message}</li>`;
                     return;
                 }
 
-                reports.forEach(complaint => {
-                    // Determine status color
-                    let statusColor = 'text-blue-600';
-                    if (complaint.status === 'Under Review') statusColor = 'text-yellow-600'; // "Seen"
-                    else if (complaint.status === 'Resolved') statusColor = 'text-green-600'; // "Solved"
+                reports.forEach((complaint, index) => {
+                    let statusColor = 'text-blue-400';
+                    let statusBg = 'bg-blue-900';
+                    if (complaint.status === 'Under Review') { statusColor = 'text-yellow-400'; statusBg = 'bg-yellow-900'; } // Seen
+                    else if (complaint.status === 'Resolved') { statusColor = 'text-green-400'; statusBg = 'bg-green-900'; } // Solved
 
-                    // Admin Actions HTML (only visible on Admin Dashboard)
                     let adminActions = '';
                     if (isAdmin) {
                         adminActions = `
                             <div class="mt-2 space-x-2 flex flex-wrap gap-2">
                                 ${complaint.status !== 'Under Review' ? 
-                                    // Acknowledge button - sets status to 'Under Review' (Seen)
-                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-700">Acknowledge (Seen)</button>` 
+                                    // Acknowledge (Seen)
+                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-600 hover:bg-yellow-500 text-black border-yellow-800">ACKNOWLEDGE (SEEN)</button>` 
                                     : ''
                                 }
                                 ${complaint.status !== 'Resolved' ? 
-                                    // Mark Resolved button - sets status to 'Resolved' (Solved)
-                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-500 hover:bg-green-600 text-white border-green-700">Mark Resolved (Solved)</button>`
+                                    // Mark Resolved (Solved)
+                                    `<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-600 hover:bg-green-500 text-black border-green-800">MARK RESOLVED (SOLVED)</button>`
                                     : ''
                                 }
                             </div>
                         `;
                     }
                     
-                    // Main Report Display Detail
                     let reportDetail;
                     if (isAdmin) {
                         reportDetail = `
-                            <p class="font-bold text-lg text-mc-dirt">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
-                            <p class="text-xs text-red-600 font-semibold">Reported by: ${complaint.complainantName}</p>
+                            <div class="flex justify-between items-start w-full">
+                                <div>
+                                    <p class="font-black text-xl" style="color: ${PRIMARY_COLOR};">${complaint.targetName}</p>
+                                    <p class="text-sm font-semibold text-gray-400">${complaint.type}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs font-bold" style="color: var(--mc-admin-light);">REPORTED BY:</p>
+                                    <p class="text-sm font-extrabold" style="color: var(--mc-admin);">${complaint.complainantName}</p>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-400 mt-2">${complaint.details}</p>
                         `;
                     } else {
                         reportDetail = `
-                            <p class="font-bold">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
+                            <p class="font-bold" style="color: ${PRIMARY_COLOR};">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
+                            <p class="text-sm text-gray-400 truncate mt-1">${complaint.details}</p>
                         `;
                     }
 
-                    const evidenceStatus = complaint.evidence 
-                        ? `<span class="text-xs text-yellow-600 font-medium">${complaint.evidence.substring(0, 20)}...</span>`
-                        : `<span class="text-xs text-gray-500">No Evidence</span>`;
-                    
                     const li = document.createElement('li');
-                    li.className = 'p-4 bg-white border-2 border-mc-stone rounded-md transition duration-100 hover:border-mc-green';
+                    li.className = `p-4 rounded-lg admin-report-card`;
+                    li.style.animationDelay = `${index * 0.05}s`; // Staggered entry animation
                     li.innerHTML = `
-                        <div class="${isAdmin ? 'flex flex-col' : ''}">
-                            <div>
-                                ${reportDetail}
-                                <p class="text-sm text-gray-700 truncate mt-1">${complaint.details}</p>
-                            </div>
-                        </div>
+                        ${reportDetail}
                         
-                        <div class="mt-2 flex ${isAdmin ? 'justify-between' : 'justify-start'} items-center text-xs">
-                            <p>Status: <span class="font-bold ${statusColor}">${complaint.status}</span> | Evidence: ${evidenceStatus}</p>
+                        <div class="mt-3 flex justify-between items-end text-xs pt-2 border-t border-gray-700">
+                            <div class="flex items-center space-x-4">
+                                <span class="font-bold p-1 rounded ${statusBg} ${statusColor}">STATUS: ${complaint.status.toUpperCase()}</span>
+                            </div>
                             ${adminActions}
                         </div>
                     `;
@@ -534,7 +645,7 @@
                 });
             }, (error) => {
                 console.error("Error fetching real-time complaints:", error);
-                targetListContainer.innerHTML = '<li class="text-red-500 p-3">Error loading complaints.</li>';
+                targetListContainer.innerHTML = '<li class="text-red-500 p-3">ERROR LOADING LOGS.</li>';
             });
         }
 
@@ -547,7 +658,7 @@
             const details = document.getElementById('details').value.trim();
             
             if (!complaintType || !targetName || !details) {
-                showModal('Validation Error', 'A complaint type must be selected and all required fields must be filled.', 'bg-red-500');
+                showModal('INPUT ERROR', 'A complaint type must be selected and all required fields must be filled.', 'bg-red-500');
                 return;
             }
 
@@ -556,7 +667,7 @@
 
             let evidencePayload = null;
             if (file) {
-                evidencePayload = `File selected: ${file.name} (${(file.size / 1024).toFixed(2)} KB). Stored as placeholder.`;
+                evidencePayload = `FILE DATA: ${file.name} (${(file.size / 1024).toFixed(2)} KB). Placeholder ONLY.`;
             }
             
             const complaintData = {
@@ -571,30 +682,33 @@
             };
 
             const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.textContent = 'Submitting...';
+            submitBtn.textContent = 'EXECUTING...';
             submitBtn.disabled = true;
 
             try {
-                await addDoc(getComplaintsCollection(), complaintData);
+                // Since this might be running with a dummy config, we'll check if the db is initialized properly 
+                if (db.app.options.apiKey === DUMMY_FIREBASE_CONFIG.apiKey) {
+                     showModal('LOCAL MODE ACTIVE', 'Form submission succeeded locally, but data will NOT be saved to Firestore. (Use Canvas for persistence).', 'bg-blue-500');
+                     // Simulate success locally
+                } else {
+                     await addDoc(getComplaintsCollection(), complaintData);
+                     showModal('TRANSMISSION SUCCESS', `Report for ${targetName} logged successfully. Standby for review.`, 'bg-mc-primary');
+                }
 
-                showModal('Report Submitted!', `Thank you, ${playerName}! Your report about ${targetName} has been logged.`, 'bg-mc-green');
-
-                // Clear form fields, and return to cube selection
+                // Clear form fields
                 document.getElementById('target-name').value = '';
                 document.getElementById('details').value = '';
                 document.getElementById('evidence-file-upload').value = ''; 
                 selectedTypeInput.value = '';
 
                 // Go back to the cubes screen
-                formDetailsScreen.classList.add('hidden');
-                cubesScreen.classList.remove('hidden');
-
+                showScreen(cubesScreen);
 
             } catch (error) {
                 console.error("Error submitting complaint:", error);
-                showModal('Submission Failed', `There was an error submitting your report: ${error.message}.`, 'bg-red-500');
+                showModal('TRANSMISSION FAILED', `Error during report submission: ${error.message}.`, 'bg-red-500');
             } finally {
-                submitBtn.textContent = 'Submit Complaint';
+                submitBtn.textContent = '[ EXECUTE SUBMISSION ]';
                 submitBtn.disabled = false;
             }
         });
