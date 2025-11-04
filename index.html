@@ -22,14 +22,6 @@
             --mc-accent-red: #E74C3C;
             --mc-accent-yellow: #F1C40F;
         }
-        body {
-            font-family: 'Roboto Mono', monospace; /* Console feel */
-            background-color: var(--mc-bg);
-            color: var(--mc-text);
-            /* Nether-like pixel grid background */
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cg fill='%23333333' fill-opacity='0.4'%3E%3Cpath d='M0 0h1v1H0V0zm3 0h1v1H3V0zm4 0h1v1H7V0zm-2 2h1v1H5V2zm-4 4h1v1H1V6zm3 1h1v1H4V7z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
-            min-height: 100vh;
-        }
         
         /* Keyframe Animations */
         @keyframes fadeInSlide {
@@ -41,6 +33,43 @@
             0%, 100% { box-shadow: 0 0 5px var(--mc-primary); }
             50% { box-shadow: 0 0 10px var(--mc-primary), 0 0 15px rgba(255, 165, 0, 0.4); }
         }
+        
+        /* --- NEW BACKGROUND ANIMATION KEYFRAMES (Nether Mist) --- */
+        @keyframes netherMist {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        body {
+            font-family: 'Roboto Mono', monospace; /* Console feel */
+            background-color: #0d0d0d; /* Slightly darker base for the mist effect */
+            color: var(--mc-text);
+            min-height: 100vh;
+            position: relative; /* Needed for ::after absolute positioning */
+            overflow-x: hidden; /* Prevent horizontal scroll from animation */
+        }
+        
+        /* --- NEW BACKGROUND MIST EFFECT --- */
+        body::after {
+            content: '';
+            position: fixed; /* Fixed so it covers the whole viewport */
+            top: 0;
+            left: 0;
+            width: 300%; /* Make it larger to allow for movement */
+            height: 300%;
+            z-index: -10; /* Place behind all content */
+            opacity: 0.2; /* Subtle effect */
+            
+            /* Nether Mist Gradient (Dark Red/Orange) */
+            background: radial-gradient(circle at 100% 100%, #1A0505 0%, transparent 40%),
+                        radial-gradient(circle at 0% 0%, #330A00 0%, transparent 40%),
+                        radial-gradient(circle at 50% 50%, #111111 0%, transparent 50%);
+                        
+            background-size: 150% 150%;
+            animation: netherMist 45s linear infinite alternate; /* Slow, repeating animation */
+            pointer-events: none; /* Ignore clicks */
+        }
+        /* --- END NEW BACKGROUND MIST EFFECT --- */
 
         .mc-header {
             background-color: var(--mc-primary);
