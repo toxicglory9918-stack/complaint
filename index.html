@@ -1,790 +1,271 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arcadia SMP - Player Complaint Form</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load New Fonts: Bebas Neue for headers, Roboto Mono for console text -->
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* --- New Obsidian/Glowstone Theme & Animation Setup --- */
-        :root {
-            --mc-primary: #FFA500; /* Glowstone Orange/Action */
-            --mc-secondary: #D32F2F; /* Nether Red/Shadow */
-            --mc-bg: #1A1A1A; /* Obsidian Black */
-            --mc-card-bg: #2d2d2d; /* Dark Stone */
-            --mc-text: #F0F0F0; /* Light Text */
-            --mc-admin: #6A0DAD; /* Wither Purple (Admin) */
-            --mc-police: #3498DB; /* Diamond Blue (Police) */
-            --mc-admin-light: #9B59B6;
-            --mc-accent-red: #E74C3C;
-            --mc-accent-yellow: #F1C40F;
-        }
-        
-        /* Keyframe Animations */
-        @keyframes fadeInSlide {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
+import React, { useState, useEffect } from 'react';
+import { 
+  LogIn, PlusCircle, Gavel, ShieldCheck, Package, Clock, 
+  DollarSign, Image as ImageIcon, ChevronLeft, Settings,
+  Tag, Info, Trash2, History, Activity, User, TrendingUp
+} from 'lucide-react';
 
-        @keyframes flicker {
-            0%, 100% { box-shadow: 0 0 5px var(--mc-primary); }
-            50% { box-shadow: 0 0 10px var(--mc-primary), 0 0 15px rgba(255, 165, 0, 0.4); }
-        }
-        
-        /* --- NEW BACKGROUND ANIMATION KEYFRAMES (Nether Mist) --- */
-        @keyframes netherMist {
-            0% { background-position: 0% 0%; }
-            100% { background-position: 100% 100%; }
-        }
+export default function App() {
+  const [view, setView] = useState('login'); 
+  const [pin, setPin] = useState('');
+  const [isOwner, setIsOwner] = useState(false);
+  
+  // State for Auction Data
+  const [auctions, setAuctions] = useState([
+    { 
+      id: '1024', 
+      category: 'Tools', 
+      name: 'Elite Netherite Pickaxe', 
+      price: 5000, 
+      time: '72h', 
+      desc: 'Efficiency V, Mending. Barely used.', 
+      img: 'https://images.unsplash.com/photo-1627398242454-45a1465c2479?auto=format&fit=crop&q=80&w=200',
+      bids: [
+        { user: 'Steve_01', amount: 5000, time: '2 mins ago' },
+        { user: 'AlexCraft', amount: 4500, time: '10 mins ago' }
+      ]
+    },
+    { 
+      id: '8821', 
+      category: 'Blocks', 
+      name: 'Stack of Beacons', 
+      price: 64000, 
+      time: '98h', 
+      desc: 'Direct from the Wither farm.', 
+      img: '',
+      bids: [{ user: 'RichMiner', amount: 64000, time: '1 hour ago' }]
+    }
+  ]);
 
-        body {
-            font-family: 'Roboto Mono', monospace; /* Console feel */
-            background-color: #0d0d0d; /* Slightly darker base for the mist effect */
-            color: var(--mc-text);
-            min-height: 100vh;
-            position: relative; /* Needed for ::after absolute positioning */
-            overflow-x: hidden; /* Prevent horizontal scroll from animation */
-        }
-        
-        /* --- NEW BACKGROUND MIST EFFECT --- */
-        body::after {
-            content: '';
-            position: fixed; /* Fixed so it covers the whole viewport */
-            top: 0;
-            left: 0;
-            width: 300%; /* Make it larger to allow for movement */
-            height: 300%;
-            z-index: -10; /* Place behind all content */
-            opacity: 0.2; /* Subtle effect */
-            
-            /* Nether Mist Gradient (Dark Red/Orange) */
-            background: radial-gradient(circle at 100% 100%, #1A0505 0%, transparent 40%),
-                        radial-gradient(circle at 0% 0%, #330A00 0%, transparent 40%),
-                        radial-gradient(circle at 50% 50%, #111111 0%, transparent 50%);
-                        
-            background-size: 150% 150%;
-            animation: netherMist 45s linear infinite alternate; /* Slow, repeating animation */
-            pointer-events: none; /* Ignore clicks */
-        }
-        /* --- END NEW BACKGROUND MIST EFFECT --- */
+  // State for Personal History
+  const [history, setHistory] = useState([
+    { type: 'Sold', item: 'Diamond Chestplate', price: 2500, date: '2023-10-12', status: 'Completed' },
+    { type: 'Bought', item: 'Golden Apple x64', price: 1200, date: '2023-10-10', status: 'Completed' }
+  ]);
 
-        .mc-header {
-            background-color: var(--mc-primary);
-            border-bottom: 8px solid var(--mc-secondary);
-            text-shadow: 3px 3px 0 var(--mc-secondary);
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 0.1em;
-            color: black;
-        }
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (pin === '8957') {
+      setIsOwner(true);
+      setView('dashboard');
+    } else if (pin.length === 4) {
+      setIsOwner(false);
+      setView('dashboard');
+    } else {
+      alert("Please enter a valid 4-digit PIN.");
+    }
+  };
 
-        /* Enhanced Card Styling (Obsidian Block) */
-        .mc-card {
-            background-color: var(--mc-card-bg);
-            border: 4px solid var(--mc-secondary);
-            box-shadow: 8px 8px 0 var(--mc-secondary);
-            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-            color: var(--mc-text);
-        }
+  // --- SUB-COMPONENTS ---
 
-        /* Enhanced Button Styling (Glowstone Block) */
-        .mc-button {
-            background-color: var(--mc-primary);
-            color: var(--mc-secondary);
-            padding: 0.75rem 1.5rem;
-            border: 4px solid var(--mc-secondary);
-            box-shadow: 4px 4px 0 var(--mc-secondary);
-            transition: all 0.1s ease-out;
-            font-weight: 700;
-            font-family: 'Bebas Neue', sans-serif;
-            letter-spacing: 0.05em;
-        }
-        .mc-button:hover {
-            background-color: #FFB333; /* Slightly lighter orange */
-            box-shadow: 6px 6px 0 var(--mc-secondary);
-            transform: translate(-2px, -2px);
-        }
-        .mc-button:active {
-            box-shadow: 0 0 0 var(--mc-secondary);
-            transform: translate(4px, 4px);
-        }
-
-        /* Animated Input Field Focus */
-        .mc-input {
-            border: 3px solid #888;
-            padding: 0.6rem;
-            background-color: #1A1A1A;
-            color: var(--mc-text);
-            transition: border-color 0.2s, box-shadow 0.2s;
-            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
-        }
-        .mc-input:focus, .mc-textarea:focus {
-            border-color: var(--mc-primary);
-            outline: none;
-            /* Glowing effect on focus */
-            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.4), inset 0 0 5px var(--mc-primary);
-        }
-
-        /* Complaint Cube Styling */
-        .complaint-cube {
-            border: 3px solid var(--mc-secondary);
-            box-shadow: 4px 4px 0 var(--mc-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease-out;
-            animation: flicker 2s ease-in-out infinite alternate; /* Subtle flicker */
-        }
-        .complaint-cube:hover {
-            box-shadow: 8px 8px 0 var(--mc-secondary);
-            transform: translate(-4px, -4px) scale(1.02);
-            animation-play-state: paused;
-        }
-        .complaint-cube.selected {
-            animation: pulse-effect 0.8s ease-in-out;
-            border-color: var(--mc-primary);
-            box-shadow: 6px 6px 0 var(--mc-primary);
-            background-color: #3d3d3d !important; 
-            color: var(--mc-primary) !important;
-        }
-        
-        /* Specific Cube Colors (Retaining high contrast) */
-        .cube-griefing { background-color: var(--mc-accent-red); color: white; }
-        .cube-hacking { background-color: var(--mc-police); color: white; }
-        .cube-harassment { background-color: var(--mc-accent-yellow); color: #1A1A1A; } 
-        .cube-staff-abuse { background-color: #800080; color: white; } /* Purple Nether Accent */
-        .cube-bug { background-color: #555; color: var(--mc-text); } /* Dark Gray */
-
-        .admin-report-card {
-            background-color: #333;
-            border: 2px solid #555;
-            transition: all 0.2s;
-            cursor: default;
-            animation: fadeInSlide 0.4s ease-out; /* Animation applied by JS, fallback */
-        }
-        .admin-report-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(255, 165, 0, 0.2); /* Glowstone glow on hover */
-            border-color: var(--mc-primary);
-        }
-
-        .admin-action-btn {
-            background-color: var(--mc-card-bg);
-            color: var(--mc-text);
-            border: 2px solid var(--mc-secondary);
-            box-shadow: 2px 2px 0 var(--mc-secondary);
-            font-size: 0.75rem; /* Small font for buttons */
-        }
-        .admin-action-btn:hover {
-            background-color: #444;
-            box-shadow: 4px 4px 0 var(--mc-secondary);
-            transform: translate(-2px, -2px);
-        }
-
-        /* Utility for Animated Screen Transitions (More aggressive slide) */
-        .screen-container {
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-            opacity: 0;
-            transform: translateY(40px);
-        }
-        .screen-container.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .hidden { display: none !important; }
-
-    </style>
-    <!-- Lucide icons for visual appeal -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-</head>
-<body class="min-h-screen">
-
-    <!-- Header Section -->
-    <header class="mc-header p-6 text-center">
-        <h1 class="text-4xl md:text-5xl font-black uppercase tracking-wider text-black">MINECRAFT_2613</h1>
-    </header>
-
-    <main class="container mx-auto p-4 md:p-8">
-
-        <!-- Loading and Auth Indicator -->
-        <div id="loading-spinner" class="text-center p-8 text-lg font-bold">
-            <div class="animate-spin inline-block w-8 h-8 border-4 border-mc-primary border-t-transparent rounded-full mr-2"></div>
-            Authenticating & Initializing...
+  const Navbar = () => (
+    <nav className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
+          <div className="bg-slate-900 p-2 rounded-lg"><Gavel className="text-white" size={18} /></div>
+          <span className="font-bold text-slate-800 tracking-tight">Marketplace</span>
+          {isOwner && <span className="bg-amber-100 text-amber-600 text-[10px] px-2 py-0.5 rounded-md font-black uppercase tracking-tighter ml-2">Owner Override</span>}
         </div>
-        
-        <!-- --- Screen 1: Name Entry --- -->
-        <div id="name-entry-screen" class="hidden max-w-md mx-auto screen-container">
-            <div class="mc-card p-6 text-center rounded-lg">
-                <h2 class="text-3xl font-bold mb-4" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">ACCESS TERMINAL</h2>
-                <p class="text-gray-400 mb-6">Enter your Minecraft name to access player functions.</p>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setView('create')} className="bg-sky-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-sky-100 transition-all">
+            Sell Item
+          </button>
+          <button onClick={() => setView('activity')} className="p-2 text-slate-400 hover:text-sky-500 transition-colors">
+            <Activity size={20} />
+          </button>
+          <button onClick={() => setView('login')} className="text-slate-400 hover:text-red-400 transition-colors">
+            <LogIn size={20} />
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
 
-                <form id="name-entry-form" class="space-y-4">
-                    <div>
-                        <label for="player-name-input" class="block text-lg font-semibold mb-1 text-left" style="color: var(--mc-primary);">> USERNAME</label>
-                        <input type="text" id="player-name-input" class="mc-input w-full rounded-md" placeholder="Enter your username" required>
+  // --- VIEWS ---
+
+  if (view === 'login') {
+    return (
+      <div className="min-h-screen bg-[#fdfdfd] flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-sky-100">
+            <ShieldCheck className="text-sky-500 w-10 h-10" />
+          </div>
+          <h1 className="text-3xl font-light text-slate-800 tracking-tight mb-8">Auction <span className="font-bold">Portal</span></h1>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <input 
+              type="password" 
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="0000"
+              className="w-full text-center text-3xl tracking-[0.8em] py-5 bg-white border-b-2 border-slate-100 focus:border-sky-400 outline-none transition-all"
+            />
+            <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl hover:bg-sky-600 transition-all">
+              Identify & Enter
+            </button>
+          </form>
+          <p className="text-[10px] text-slate-300 mt-10 uppercase tracking-[0.2em]">PIN: 8957 (Owner) | Any 4-Digits (User)</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'dashboard') {
+    return (
+      <div className="min-h-screen bg-[#f8fafc]">
+        <Navbar />
+        <main className="max-w-6xl mx-auto p-6">
+          <div className="mb-10">
+            <h2 className="text-4xl font-black text-slate-900">Live Market</h2>
+            <p className="text-slate-400">Monitor active bids and discover items.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {auctions.map(auc => (
+              <div key={auc.id} className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden hover:shadow-2xl transition-all duration-500">
+                <div className="h-44 bg-slate-50 relative">
+                  {auc.img ? <img src={auc.img} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Package size={40}/></div>}
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold text-slate-500 shadow-sm uppercase">{auc.category}</div>
+                  <div className="absolute top-4 right-4 bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-bold">#{auc.id}</div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-slate-800">{auc.name}</h3>
+                  <div className="mt-4 space-y-3 mb-6">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-400 font-medium">Top Bidder</span>
+                      <span className="text-slate-800 font-bold">{auc.bids[0]?.user || 'No Bids'}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">Price</span>
+                      <span className="text-2xl font-black text-green-500">${auc.price.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-sky-500 transition-all">Place Bid</button>
+                    {isOwner && <button className="p-4 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20}/></button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
-                    <button type="submit" class="mc-button w-full rounded-md mt-4">
-                        [ LOAD INTERFACE ]
-                    </button>
+  if (view === 'activity' || view === 'history') {
+    return (
+      <div className="min-h-screen bg-[#f8fafc]">
+        <Navbar />
+        <main className="max-w-4xl mx-auto p-6 py-10">
+          <div className="flex gap-8 mb-10 border-b border-slate-200">
+            <button onClick={() => setView('activity')} className={`pb-4 font-bold text-sm uppercase tracking-widest ${view === 'activity' ? 'text-sky-500 border-b-2 border-sky-500' : 'text-slate-400'}`}>My Live Sales</button>
+            <button onClick={() => setView('history')} className={`pb-4 font-bold text-sm uppercase tracking-widest ${view === 'history' ? 'text-sky-500 border-b-2 border-sky-500' : 'text-slate-400'}`}>Transaction History</button>
+          </div>
+
+          {view === 'activity' ? (
+            <div className="space-y-4">
+              {auctions.map(auc => (
+                <div key={auc.id} className="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300">
+                      {auc.img ? <img src={auc.img} className="w-full h-full rounded-2xl object-cover" /> : <Package />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-800">{auc.name}</h4>
+                      <p className="text-xs text-slate-400">Auction ID: #{auc.id} • {auc.time} left</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-10">
+                    <div className="text-center">
+                      <span className="block text-[10px] font-black text-slate-300 uppercase">Current Bid</span>
+                      <span className="font-bold text-green-500">${auc.price}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[10px] font-black text-slate-300 uppercase">Last Bidder</span>
+                      <span className="font-bold text-slate-700">{auc.bids[0]?.user}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Item</th>
+                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {history.map((h, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 text-sm"><span className={`px-2 py-1 rounded-md text-[10px] font-bold ${h.type === 'Sold' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>{h.type}</span></td>
+                      <td className="p-4 text-sm font-bold text-slate-700">{h.item}</td>
+                      <td className="p-4 text-sm text-slate-400">{h.date}</td>
+                      <td className="p-4 text-sm font-black text-slate-800 text-right">${h.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  if (view === 'create') {
+    return (
+      <div className="min-h-screen bg-[#fcfcfc] p-6">
+        <div className="max-w-5xl mx-auto">
+          <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-400 hover:text-slate-900 mb-10 font-bold transition-all">
+            <ChevronLeft size={20} /> Back to Market
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+            <div className="lg:col-span-3">
+              <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h2 className="text-3xl font-bold text-slate-800 mb-8">List New Item</h2>
+                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setView('dashboard'); }}>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4 block">Category</label>
+                    <div className="flex flex-wrap gap-2">
+                      {['Tools', 'Armor', 'Blocks', 'Rares'].map(c => (
+                        <button key={c} type="button" className="px-4 py-2 rounded-xl border border-slate-100 text-xs font-bold text-slate-500 hover:bg-sky-50 transition-all">{c}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="text" placeholder="Item Name" className="w-full px-5 py-4 bg-slate-50 rounded-2xl outline-none" required />
+                    <input type="number" placeholder="Base Price ($)" className="w-full px-5 py-4 bg-slate-50 rounded-2xl outline-none" required />
+                  </div>
+                  <textarea rows="3" placeholder="Description..." className="w-full px-5 py-4 bg-slate-50 rounded-2xl outline-none"></textarea>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="number" max="100" placeholder="Hours (Max 100)" className="w-full px-5 py-4 bg-slate-50 rounded-2xl outline-none" required />
+                    <input type="url" placeholder="Photo Link (Optional)" className="w-full px-5 py-4 bg-slate-50 rounded-2xl outline-none" />
+                  </div>
+                  <button className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-bold text-lg hover:shadow-2xl transition-all">Start Bidding</button>
                 </form>
+              </div>
             </div>
-        </div>
 
-        <!-- --- Screen 2: Complaint Cubes Selection (USER VIEW) --- -->
-        <div id="cubes-screen" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8 screen-container">
-            <section class="lg:col-span-2">
-                <div class="mc-card p-6 rounded-lg">
-                    <h2 class="text-3xl font-bold mb-6 border-b-2 pb-2" style="color: var(--mc-primary); border-color: var(--mc-secondary); font-family: 'Bebas Neue', sans-serif;">REPORT CATEGORY SELECTION</h2>
-                    
-                    <!-- Cube Boxes for Complaint Type -->
-                    <div id="complaint-cubes" class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-                        <!-- CUBES WILL BE GENERATED HERE -->
-                    </div>
-                    <p class="text-gray-400 italic mt-4 text-center text-sm">Select the type of transgression.</p>
+            <div className="lg:col-span-2">
+               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100">
+                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><Settings className="text-sky-500" size={18} /> Identity Verification</h3>
+                <div className="rounded-3xl overflow-hidden grayscale opacity-60">
+                  <div className="visme_d" data-title="Webinar Registration Form" data-url="g7ddqxx0-untitled-project?fullPage=true" data-domain="forms" data-full-page="false" data-min-height="400px" data-form-id="133190"></div>
+                  <script src="https://static-bundle.visme.co/forms/vismeforms-embed.js"></script>
                 </div>
-            </section>
-
-            <!-- Sidebar (Reporter Info & History) for USER -->
-            <aside class="lg:col-span-1 space-y-8">
-                <!-- User Info Card -->
-                <div class="mc-card p-4 bg-gray-900 border-2 border-mc-primary rounded-lg text-sm">
-                    <p class="font-bold mb-1" style="color: var(--mc-primary);">AUTHORISED USER:</p>
-                    <p id="reporter-name-display-user" class="text-xl font-extrabold"></p>
-                </div>
-
-                <!-- Recent Complaints Card -->
-                <div class="mc-card p-6 rounded-lg">
-                    <h3 class="text-2xl font-bold mb-4 border-b-2 pb-2" style="color: var(--mc-primary); border-color: var(--mc-secondary); font-family: 'Bebas Neue', sans-serif;">REPORT LOG</h3>
-                    <ul id="user-complaints-list" class="space-y-3">
-                        <li class="text-gray-500">Loading history...</li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
-
-        <!-- --- Screen 3: Complaint Form Details (USER VIEW) --- -->
-        <div id="form-details-screen" class="hidden max-w-2xl mx-auto screen-container">
-            <div class="mc-card p-6 rounded-lg">
-                <h2 class="text-3xl font-bold mb-2" style="color: var(--mc-primary); font-family: 'Bebas Neue', sans-serif;">INPUT REPORT DATA</h2>
-                <h3 id="form-title-type" class="text-xl font-semibold mb-6 text-gray-400">Complaint Type: [Type]</h3>
-
-                <form id="complaint-form" class="space-y-4">
-                    <input type="hidden" id="selected-type" required>
-                    
-                    <!-- Target Player Name (MANDATORY) -->
-                    <div>
-                        <label for="target-name" class="block text-lg font-semibold mb-1">TARGET <span class="text-red-500">*</span></label>
-                        <input type="text" id="target-name" class="mc-input w-full rounded-md" placeholder="The player/entity being reported" required>
-                    </div>
-
-                    <!-- Complaint Details (MANDATORY) -->
-                    <div>
-                        <label for="details" class="block text-lg font-semibold mb-1">DETAILS <span class="text-red-500">*</span></label>
-                        <textarea id="details" rows="5" class="mc-input mc-textarea w-full rounded-md" placeholder="Describe the incident, including time, date, and location." required></textarea>
-                    </div>
-                    
-                    <!-- Evidence File (Image/Video) -->
-                    <div>
-                        <label for="evidence-file-upload" class="block text-lg font-semibold mb-1">EVIDENCE FILE</label>
-                        <input type="file" id="evidence-file-upload" class="mc-input w-full rounded-md p-1.5 bg-gray-800" accept="image/*,video/*">
-                        <p class="text-sm text-gray-500 mt-1">File upload is simulated.</p>
-                    </div>
-
-                    <!-- Submission Button -->
-                    <button type="submit" class="mc-button w-full rounded-md">
-                        [ EXECUTE SUBMISSION ]
-                    </button>
-                    
-                    <button type="button" id="back-to-cubes-btn" class="mc-button bg-gray-600 hover:bg-gray-700 border-gray-800 hover:shadow-gray-800 w-full rounded-md mt-2" style="color: var(--mc-text);">
-                        [ CANCEL & BACK ]
-                    </button>
-                </form>
+              </div>
             </div>
+          </div>
         </div>
-        
-        <!-- --- Screen 4: Admin Dashboard (ADMIN/POLICE VIEW) --- -->
-        <div id="admin-dashboard-screen" class="hidden max-w-6xl mx-auto screen-container">
-            <div class="mc-card p-6 bg-gray-900 border-4" style="border-color: var(--mc-admin);">
-                <h2 class="text-3xl font-black mb-4 uppercase border-b-4 pb-2" style="color: var(--mc-admin); border-color: var(--mc-admin);">ADMIN CONTROL PANEL</h2>
-                <div id="access-level-info" class="p-3 mb-6 bg-gray-800 border-2 rounded-md text-sm" style="border-color: var(--mc-admin-light);">
-                    <!-- Access level dynamically set by JS -->
-                </div>
-                
-                <ul id="admin-complaints-list" class="space-y-4">
-                    <li class="text-gray-500">Loading all reports...</li>
-                </ul>
-            </div>
-        </div>
+      </div>
+    );
+  }
+}
 
-    </main>
-
-    <!-- Success Message Modal (Hidden by Default) -->
-    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 transition-opacity duration-300">
-        <div id="modal-content" class="mc-card p-8 w-full max-w-md text-center rounded-lg" style="border-color: var(--mc-primary);">
-            <!-- Content filled by showModal function -->
-        </div>
-    </div>
-
-
-    <!-- Firebase setup and main application logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, limit, setLogLevel, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // IMPORTANT: Global variables are provided by the hosting environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id-local';
-        
-        let firebaseConfig = null;
-        let initialAuthToken = null;
-
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        } catch (e) {
-            console.error("Could not parse Firebase configuration.", e);
-        }
-
-        // --- Role Codes ---
-        // Note: These are no longer advertised in the UI, but still used for access control logic.
-        const ADMIN_CODE = '9935'; 
-        const POLICE_CODE = '8090'; 
-        const PRIMARY_COLOR = '#FFA500'; 
-
-        // --- Global State & Firebase Init ---
-        setLogLevel('Debug');
-        let db = null; // Initialize as null
-        let auth = null;
-        let userId = null;
-        let playerName = null;
-        let isAdmin = false;
-        let isPolice = false; 
-
-        // DOM elements
-        const nameEntryScreen = document.getElementById('name-entry-screen'); 
-        const cubesScreen = document.getElementById('cubes-screen'); 
-        const formDetailsScreen = document.getElementById('form-details-screen'); 
-        const adminDashboardScreen = document.getElementById('admin-dashboard-screen');
-        
-        const nameEntryForm = document.getElementById('name-entry-form');
-        const form = document.getElementById('complaint-form');
-        const selectedTypeInput = document.getElementById('selected-type');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const formTitleType = document.getElementById('form-title-type');
-        const modal = document.getElementById('message-modal');
-        
-        const userListContainer = document.getElementById('user-complaints-list');
-        const adminListContainer = document.getElementById('admin-complaints-list');
-        const reporterNameDisplayUser = document.getElementById('reporter-name-display-user');
-        
-        const accessLevelInfo = document.getElementById('access-level-info');
-
-        const allScreens = [nameEntryScreen, cubesScreen, formDetailsScreen, adminDashboardScreen];
-
-        const complaintCategories = [
-            { id: 'Griefing', title: 'GRIEFING', description: 'Unauthorized building/chest damage.', icon: 'bomb', color: 'cube-griefing' },
-            { id: 'Hacking', title: 'HACKING', description: 'X-ray, Fly hacks, or other exploits.', icon: 'shield-off', color: 'cube-hacking' },
-            { id: 'Harassment', title: 'HARASSMENT', description: 'Inappropriate language or bullying.', icon: 'skull', color: 'cube-harassment' },
-            { id: 'StaffAbuse', title: 'STAFF MISCONDUCT', description: 'Reporting a staff member\'s behavior.', icon: 'user-x', color: 'cube-staff-abuse' },
-            { id: 'Bug', title: 'TECHNICAL BUG', description: 'Server lag, crashes, or broken features.', icon: 'bug', color: 'cube-bug' },
-            { id: 'Other', title: 'OTHER ISSUE', description: 'Something that does not fit above.', icon: 'message-square', color: 'mc-card' }
-        ];
-
-        // --- Dynamic & Animated Screen Transition Function ---
-        function showScreen(targetElement) {
-            let activeElement = null;
-
-            allScreens.forEach(el => {
-                if (el.classList.contains('active')) {
-                    activeElement = el;
-                }
-            });
-
-            if (activeElement) {
-                // 1. Animate out the current screen
-                activeElement.classList.remove('active');
-                activeElement.style.opacity = '0';
-                activeElement.style.transform = 'translateY(-40px)';
-                
-                setTimeout(() => {
-                    activeElement.classList.add('hidden');
-                    activeElement.style.transform = 'translateY(40px)'; // Reset transform for next time
-
-                    // 2. Animate in the target screen
-                    targetElement.style.opacity = '0';
-                    targetElement.classList.remove('hidden');
-                    
-                    // Force a reflow to ensure the initial (hidden) state is applied
-                    void targetElement.offsetWidth; 
-
-                    targetElement.classList.add('active');
-                    targetElement.style.transform = 'translateY(0)';
-                    targetElement.style.opacity = '1';
-
-                }, 300); // Matches CSS transition duration
-            } else {
-                // Initial show
-                targetElement.classList.remove('hidden');
-                targetElement.classList.add('active');
-                targetElement.style.opacity = '1';
-                targetElement.style.transform = 'translateY(0)';
-            }
-        }
-
-
-        // --- Screen 1 Logic (Name Entry & Role Check) ---
-        nameEntryForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const nameInput = document.getElementById('player-name-input');
-            playerName = nameInput.value.trim();
-
-            if (!playerName) {
-                showModal('ACCESS DENIED', 'Please enter your Minecraft Username.', 'bg-red-500');
-                return;
-            }
-
-            // Check for admin/police access via username/code
-            isAdmin = (playerName === ADMIN_CODE);
-            isPolice = (playerName === POLICE_CODE); 
-            
-            reporterNameDisplayUser.textContent = playerName;
-
-            // Set Admin/Police Info Box
-            if (isAdmin) {
-                accessLevelInfo.innerHTML = `
-                    <p class="font-bold" style="color: var(--mc-admin-light);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">ADMIN (FULL)</span></p>
-                    <p class="text-xs text-gray-500 mt-1">Full control over report statuses.</p>
-                `;
-                adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-admin)';
-                adminDashboardScreen.querySelector('h2').style.color = 'var(--mc-admin)';
-                showScreen(adminDashboardScreen);
-            } else if (isPolice) {
-                 accessLevelInfo.innerHTML = `
-                    <p class="font-bold" style="color: var(--mc-police);">ACCESS LEVEL: <span class="text-xl font-extrabold text-white">POLICE (VIEWER)</span></p>
-                    <p class="text-xs text-gray-500 mt-1">View all reports. Can change status to Acknowledged, Resolved, or Rejected.</p>
-                `;
-                adminDashboardScreen.querySelector('.mc-card').style.borderColor = 'var(--mc-police)';
-                adminDashboardScreen.querySelector('h2').style.color = 'var(--mc-police)';
-                showScreen(adminDashboardScreen); 
-            } else {
-                showScreen(cubesScreen); 
-                renderCubes();
-            }
-            
-            // Setup listener only if the database is initialized
-            if (db) {
-                setupRealtimeListener();
-            } else {
-                userListContainer.innerHTML = '<li class="text-red-500 italic p-3">Database connection failed. Report history unavailable.</li>';
-                adminListContainer.innerHTML = '<li class="text-red-500 italic p-3">Database connection failed. Reports unavailable.</li>';
-            }
-        });
-
-
-        // --- UI Functions ---
-
-        function renderCubes() {
-            const container = document.getElementById('complaint-cubes');
-            container.innerHTML = complaintCategories.map(cat => `
-                <div class="complaint-cube ${cat.color} p-4 rounded-lg flex flex-col items-center text-center" data-id="${cat.id}" data-title="${cat.title}">
-                    <i data-lucide="${cat.icon}" class="w-8 h-8 mb-2"></i>
-                    <p class="font-bold text-lg">${cat.title}</p>
-                    <p class="text-xs opacity-80 mt-1">${cat.description}</p>
-                </div>
-            `).join('');
-            lucide.createIcons(); 
-
-            document.querySelectorAll('.complaint-cube').forEach(cube => {
-                cube.addEventListener('click', () => handleCubeSelection(cube));
-            });
-        }
-
-        function handleCubeSelection(selectedCube) {
-            document.querySelectorAll('.complaint-cube').forEach(c => c.classList.remove('selected'));
-            selectedCube.classList.add('selected');
-
-            const typeId = selectedCube.dataset.id;
-            const typeTitle = selectedCube.dataset.title;
-
-            selectedTypeInput.value = typeId;
-            formTitleType.textContent = `Complaint Type: ${typeTitle}`;
-
-            showScreen(formDetailsScreen);
-        }
-
-        function showModal(title, message, colorClass) {
-            const modalContent = document.getElementById('modal-content');
-            
-            modalContent.innerHTML = `
-                <h3 class="text-3xl font-bold mb-4" style="color: ${colorClass.includes('red') ? '#EF4444' : PRIMARY_COLOR}; font-family: 'Bebas Neue', sans-serif;">${title}</h3>
-                <p class="text-gray-300 mb-6">${message}</p>
-                <button id="close-modal-btn-inner" class="mc-button rounded-md uppercase font-bold text-sm">CLOSE WINDOW</button>
-            `;
-            modal.classList.remove('hidden');
-            
-            document.getElementById('close-modal-btn-inner').onclick = () => {
-                modal.classList.add('hidden');
-            };
-        }
-
-        // --- Screen 3 Back Button Logic ---
-        document.getElementById('back-to-cubes-btn').addEventListener('click', () => {
-            document.querySelectorAll('.complaint-cube').forEach(c => c.classList.remove('selected'));
-            showScreen(cubesScreen);
-        });
-
-        // --- Firebase Functions ---
-
-        async function initFirebase() {
-            // Check if essential configuration is available
-            if (!firebaseConfig || !firebaseConfig.projectId) {
-                console.error("FIREBASE CONFIGURATION MISSING. Running in UI-only mode (data will not be saved).");
-                // Fallback: Show the login screen immediately but set a dummy user ID for UI flow
-                userId = 'no-db-user-' + Math.random().toString(36).substring(2, 9); 
-                loadingSpinner.classList.add('hidden');
-                showScreen(nameEntryScreen);
-                return;
-            }
-
-            // Proceed with live Firebase initialization
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        loadingSpinner.classList.add('hidden');
-                        showScreen(nameEntryScreen);
-                    } else {
-                        console.error("Authentication failed or user signed out.");
-                        loadingSpinner.textContent = 'Error: Could not authenticate user. Please try refreshing.';
-                    }
-                });
-
-            } catch (error) {
-                console.error("Error initializing Firebase or signing in:", error);
-                loadingSpinner.textContent = 'FATAL ERROR: Could not load application database. (Check console for details).';
-            }
-        }
-
-        function getComplaintsCollection() {
-            if (!db) return null;
-            return collection(db, `artifacts/${appId}/public/data/complaints`);
-        }
-
-        // --- Firestore Status Update Functions (Admin/Police Only) ---
-        async function updateComplaintStatus(docId, newStatus) {
-            if (!db) {
-                 showModal('DB OFFLINE', `Status change to ${newStatus} simulated but not saved.`, 'bg-blue-500');
-                 return;
-            }
-            if (!isAdmin && !isPolice) {
-                showModal('SECURITY BREACH', 'Unauthorized status update attempt.', 'bg-red-500');
-                return;
-            }
-
-            const complaintRef = doc(db, getComplaintsCollection().path, docId);
-
-            try {
-                await updateDoc(complaintRef, {
-                    status: newStatus,
-                    lastUpdated: serverTimestamp() 
-                });
-                
-            } catch (error) {
-                console.error("Error updating complaint status:", error);
-                showModal('UPDATE FAILED', `Could not update status: ${error.message}`, 'bg-red-500');
-            }
-        }
-        window.updateComplaintStatus = updateComplaintStatus;
-
-
-        function setupRealtimeListener() {
-            const complaintCollection = getComplaintsCollection();
-            if (!complaintCollection) return; // DB is not initialized
-
-            let q;
-            const targetListContainer = (isAdmin || isPolice) ? adminListContainer : userListContainer;
-
-            if (isAdmin || isPolice) {
-                // Admin and Police fetch all reports
-                q = query(complaintCollection, limit(20)); 
-            } else {
-                // Regular users fetch only their reports
-                q = query(complaintCollection, where("complainantId", "==", userId), limit(10));
-            }
-
-            onSnapshot(q, (snapshot) => {
-                let reports = [];
-                snapshot.docs.forEach(doc => {
-                    reports.push({ id: doc.id, ...doc.data() }); 
-                });
-
-                reports.sort((a, b) => {
-                    const timeA = a.timestamp ? a.timestamp.seconds : 0;
-                    const timeB = b.timestamp ? b.timestamp.seconds : 0;
-                    return timeB - timeA;
-                });
-
-                targetListContainer.innerHTML = '';
-                if (reports.length === 0) {
-                    const message = (isAdmin || isPolice) ? 'NO ACTIVE REPORTS IN DATABASE.' : 'NO REPORTS SUBMITTED.';
-                    targetListContainer.innerHTML = `<li class="text-gray-500 italic p-3">${message}</li>`;
-                    return;
-                }
-
-                reports.forEach((complaint, index) => {
-                    // --- Status Coloring ---
-                    let statusColor = 'text-blue-400';
-                    let statusBg = 'bg-blue-900';
-                    if (complaint.status === 'Under Review') { statusColor = 'text-yellow-400'; statusBg = 'bg-yellow-900'; } 
-                    else if (complaint.status === 'Resolved') { statusColor = 'text-green-400'; statusBg = 'bg-green-900'; } 
-                    else if (complaint.status === 'Rejected') { statusColor = 'text-red-400'; statusBg = 'bg-red-900'; } 
-
-                    let adminActions = '';
-                    if (isAdmin || isPolice) {
-                        
-                        let actionsHtml = [];
-                        let isFinalized = complaint.status === 'Resolved' || complaint.status === 'Rejected';
-                        
-                        // Action 1: Acknowledge / Under Review
-                        if (complaint.status === 'Pending Review') {
-                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Under Review')" class="admin-action-btn bg-yellow-600 hover:bg-yellow-500 text-black border-yellow-800">ACKNOWLEDGE (SEEN)</button>`); 
-                        }
-
-                        // Actions available only if not finalized
-                        if (!isFinalized) {
-                            // Mark Resolved
-                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Resolved')" class="admin-action-btn bg-green-600 hover:bg-green-500 text-black border-green-800">MARK RESOLVED</button>`);
-                            
-                            // Rejected / False
-                            actionsHtml.push(`<button onclick="window.updateComplaintStatus('${complaint.id}', 'Rejected')" class="admin-action-btn bg-red-600 hover:bg-red-500 text-black border-red-800">REJECTED / FALSE</button>`);
-                        }
-                        
-                        adminActions = `<div class="mt-3 space-x-2 flex flex-wrap gap-2">${actionsHtml.join('')}</div>`;
-                    }
-                    
-                    let roleTag = isAdmin ? `<span style="color: var(--mc-admin);">ADMIN</span>` : (isPolice ? `<span style="color: var(--mc-police);">POLICE</span>` : `<span class="text-gray-500">USER</span>`);
-
-
-                    let reportDetail;
-                    if (isAdmin || isPolice) {
-                        reportDetail = `
-                            <div class="flex justify-between items-start w-full">
-                                <div>
-                                    <p class="font-black text-xl" style="color: ${PRIMARY_COLOR};">${complaint.targetName}</p>
-                                    <p class="text-sm font-semibold text-gray-400">${complaint.type}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xs font-bold" style="color: var(--mc-admin-light);">REPORTED BY:</p>
-                                    <p class="text-sm font-extrabold">${complaint.complainantName} (${roleTag})</p>
-                                </div>
-                            </div>
-                            <p class="text-sm text-gray-400 mt-2">${complaint.details}</p>
-                        `;
-                    } else {
-                        reportDetail = `
-                            <p class="font-bold" style="color: ${PRIMARY_COLOR};">${complaint.targetName} (<span class="text-sm font-medium">${complaint.type}</span>)</p>
-                            <p class="text-sm text-gray-400 truncate mt-1">${complaint.details}</p>
-                        `;
-                    }
-
-                    const li = document.createElement('li');
-                    li.className = `p-4 rounded-lg admin-report-card`;
-                    li.style.animationDelay = `${index * 0.05}s`; // Staggered entry animation
-                    li.innerHTML = `
-                        ${reportDetail}
-                        
-                        <div class="mt-3 flex justify-between items-end text-xs pt-2 border-t border-gray-700">
-                            <div class="flex items-center space-x-4">
-                                <span class="font-bold p-1 rounded ${statusBg} ${statusColor}">STATUS: ${complaint.status.toUpperCase()}</span>
-                            </div>
-                            ${adminActions}
-                        </div>
-                    `;
-                    targetListContainer.appendChild(li);
-                });
-            }, (error) => {
-                console.error("Error fetching real-time complaints:", error);
-                targetListContainer.innerHTML = '<li class="text-red-500 p-3">ERROR LOADING LOGS.</li>';
-            });
-        }
-
-        // --- Form Submission Handler (User) ---
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const targetName = document.getElementById('target-name').value.trim();
-            const complaintType = selectedTypeInput.value; 
-            const details = document.getElementById('details').value.trim();
-            
-            if (!complaintType || !targetName || !details) {
-                showModal('INPUT ERROR', 'A complaint type must be selected and all required fields must be filled.', 'bg-red-500');
-                return;
-            }
-
-            const fileInput = document.getElementById('evidence-file-upload');
-            const file = fileInput.files[0];
-
-            let evidencePayload = null;
-            if (file) {
-                evidencePayload = `FILE DATA: ${file.name} (${(file.size / 1024).toFixed(2)} KB). Placeholder ONLY.`;
-            }
-            
-            const complaintData = {
-                complainantName: playerName,
-                complainantId: userId,
-                targetName: targetName,
-                type: complaintType,
-                details: details,
-                evidence: evidencePayload, 
-                status: 'Pending Review',
-                timestamp: db ? serverTimestamp() : new Date().toISOString() // Use timestamp if DB is active
-            };
-
-            const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.textContent = 'EXECUTING...';
-            submitBtn.disabled = true;
-
-            try {
-                if (!db) {
-                     showModal('UI-ONLY MODE', 'Form submission succeeded locally, but data was NOT saved.', 'bg-blue-500');
-                } else {
-                     await addDoc(getComplaintsCollection(), complaintData);
-                     showModal('TRANSMISSION SUCCESS', `Report for ${targetName} logged successfully. Standby for review.`, 'bg-mc-primary');
-                }
-
-                // Clear form fields
-                document.getElementById('target-name').value = '';
-                document.getElementById('details').value = '';
-                document.getElementById('evidence-file-upload').value = ''; 
-                selectedTypeInput.value = '';
-
-                // Go back to the cubes screen
-                showScreen(cubesScreen);
-
-            } catch (error) {
-                console.error("Error submitting complaint:", error);
-                showModal('TRANSMISSION FAILED', `Error during report submission: ${error.message}.`, 'bg-red-500');
-            } finally {
-                submitBtn.textContent = '[ EXECUTE SUBMISSION ]';
-                submitBtn.disabled = false;
-            }
-        });
-        
-        // --- Start Application ---
-        initFirebase();
-    </script>
-</body>
-</html>
